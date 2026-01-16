@@ -6,7 +6,8 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-RUN pip install --no-cache-dir flask imagehash pillow python-magic numpy opencv-python-headless
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app.py .
 

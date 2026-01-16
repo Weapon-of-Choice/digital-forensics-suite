@@ -1,8 +1,8 @@
-flask==3.0.0
-deepface==0.0.79
-numpy==1.26.3
-pillow==10.2.0
-redis==5.0.1
-tf-keras==2.15.0
-opencv-python-headless==4.9.0.80
-tensorflow==2.15.0
+flask>=3.0.3
+deepface>=0.0.93
+numpy>=1.26.4
+pillow>=11.1.0
+redis>=5.2.1
+tf-keras>=2.17.0
+opencv-python-headless>=4.10.0.84
+tensorflow>=2.17.0

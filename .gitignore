@@ -38,6 +38,10 @@ ai_models/
 backend/app/uploads/
 thumbnails/
 
+# Tooling / Internal
+.sisyphus/
+.sisyphus/*
+
 # OS
 .DS_Store
 Thumbs.db
