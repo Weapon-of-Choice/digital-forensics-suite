@@ -27,7 +27,7 @@ These independent services expose internal APIs for specialized tasks:
 -   **Hash Service**: Generates perceptual hashes (pHash) and ORB feature descriptors for image matching.
 -   **VSM Service**: Extracts temporal signatures and keyframe hashes from video files.
 -   **AI Categorizer**: Classifies images into categories (e.g., "weapon", "vehicle", "document") using pre-trained models.
--   **Geocoder**: Interfaces with Nominatim (OpenStreetMap) for address resolution.
+-   **Geocoder**: Interfaces with Nominatim (defaults to public OpenStreetMap API) for address resolution.
 
 ### Asynchronous Workers (Celery)
 Heavy processing is offloaded to specialized Celery workers via Redis:
