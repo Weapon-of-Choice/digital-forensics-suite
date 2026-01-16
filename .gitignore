@@ -1,0 +1,43 @@
+# Environments
+.env
+*/.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.pytest_cache/
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Docker/Data Volumes
+postgres_data/
+minio_data/
+keycloak_db_data/
+osm_db_data/
+ai_models/
+
+# Application Data
+backend/app/uploads/
+thumbnails/
+
+# OS
+.DS_Store
+Thumbs.db

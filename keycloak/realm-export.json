@@ -1,0 +1,123 @@
+{
+  "realm": "forensics",
+  "enabled": true,
+  "loginTheme": "forensics",
+  "accountTheme": "forensics",
+  "displayName": "Forensic Media Analysis",
+  "displayNameHtml": "<span style=\"background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 700;\">Forensic Media Analysis</span>",
+  "clients": [
+    {
+      "clientId": "forensics-api",
+      "name": "Forensics API",
+      "enabled": true,
+      "publicClient": false,
+      "bearerOnly": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true
+    },
+    {
+      "clientId": "forensics-ui",
+      "name": "Forensics UI",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "webOrigins": ["*"],
+      "redirectUris": ["http://localhost/*", "http://localhost:80/*"],
+      "baseUrl": "http://localhost",
+      "defaultClientScopes": ["openid", "profile", "email", "roles"]
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "admin",
+        "description": "Full system administrator"
+      },
+      {
+        "name": "forensic-admin",
+        "description": "Forensic department administrator"
+      },
+      {
+        "name": "forensic-analyst",
+        "description": "Forensic analyst with case access"
+      },
+      {
+        "name": "forensic-viewer",
+        "description": "Read-only access to cases"
+      }
+    ]
+  },
+  "users": [
+    {
+      "username": "admin",
+      "email": "admin@forensics.local",
+      "firstName": "System",
+      "lastName": "Administrator",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["admin", "forensic-admin", "forensic-analyst"]
+    },
+    {
+      "username": "analyst",
+      "email": "analyst@forensics.local",
+      "firstName": "Test",
+      "lastName": "Analyst",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "analyst123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["forensic-analyst"]
+    },
+    {
+      "username": "viewer",
+      "email": "viewer@forensics.local",
+      "firstName": "Test",
+      "lastName": "Viewer",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "viewer123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["forensic-viewer"]
+    }
+  ],
+  "clientScopes": [
+    {
+      "name": "roles",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true"
+      },
+      "protocolMappers": [
+        {
+          "name": "realm roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "realm_access.roles",
+            "jsonType.label": "String"
+          }
+        }
+      ]
+    }
+  ]
+}

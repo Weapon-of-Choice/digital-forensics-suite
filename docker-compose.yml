@@ -1,0 +1,474 @@
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend
+      - api
+      - keycloak
+      - osm
+      - geocoder
+      - flower
+      - minio
+    restart: unless-stopped
+    networks:
+      - frontend-net
+      - processing-net
+
+  keycloak-db:
+    image: postgres:16-alpine
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${KEYCLOAK_DB:-keycloak}
+      POSTGRES_USER: ${KEYCLOAK_DB_USER:-keycloak}
+      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak123}
+    volumes:
+      - keycloak_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${KEYCLOAK_DB_USER:-keycloak}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - auth-net
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0
+    env_file:
+      - .env
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/${KEYCLOAK_DB:-keycloak}
+      KC_DB_USERNAME: ${KEYCLOAK_DB_USER:-keycloak}
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak123}
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin123}
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY: edge
+      KC_HTTP_RELATIVE_PATH: /auth
+    volumes:
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+      - ./keycloak/themes/forensics:/opt/keycloak/themes/forensics:ro
+    command: start-dev --import-realm
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - auth-net
+      - frontend-net
+
+  db:
+    image: postgres:16-alpine
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-forensics}
+      POSTGRES_USER: ${POSTGRES_USER:-forensics}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-forensics123}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-forensics}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - backend-net
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - backend-net
+      - processing-net
+
+  minio:
+    image: minio/minio:latest
+    env_file:
+      - .env
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-forensics}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-forensics123}
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - backend-net
+      - processing-net
+      - frontend-net
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set forensics http://minio:9000 $${MINIO_ROOT_USER:-forensics} $${MINIO_ROOT_PASSWORD:-forensics123};
+      mc mb --ignore-existing forensics/media;
+      mc mb --ignore-existing forensics/thumbnails;
+      mc anonymous set download forensics/thumbnails;
+      exit 0;
+      "
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-forensics}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-forensics123}
+    networks:
+      - backend-net
+
+  osm:
+    build:
+      context: ./osm
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${OSM_DB_USER:-osm}:${OSM_DB_PASSWORD:-osm123}@osm-db:5432/${OSM_DB:-osm}
+      NEXT_PUBLIC_API_URL: /osm
+    depends_on:
+      osm-db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - frontend-net
+      - osm-net
+
+  osm-db:
+    image: postgres:16-alpine
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${OSM_DB:-osm}
+      POSTGRES_USER: ${OSM_DB_USER:-osm}
+      POSTGRES_PASSWORD: ${OSM_DB_PASSWORD:-osm123}
+    volumes:
+      - osm_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${OSM_DB_USER:-osm}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - osm-net
+
+  geocoder:
+    build:
+      context: ./geocoder
+      dockerfile: Dockerfile
+    env_file:
+      - ./geocoder/.env
+    environment:
+      NOMINATIM_URL: ${NOMINATIM_URL:-https://nominatim.openstreetmap.org}
+    restart: unless-stopped
+    networks:
+      - frontend-net
+      - processing-net
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://forensics:forensics123@db:5432/forensics}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      UPLOAD_DIR: ${UPLOAD_DIR:-/app/uploads}
+      KEYCLOAK_URL: ${KEYCLOAK_URL:-http://keycloak:8080/auth}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-forensics}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-forensics-api}
+      GEOCODER_URL: ${GEOCODER_URL:-http://geocoder:5000}
+      FACE_SERVICE_URL: ${FACE_SERVICE_URL:-http://face-service:5000}
+      HASH_SERVICE_URL: ${HASH_SERVICE_URL:-http://hash-service:5000}
+      VSM_SERVICE_URL: ${VSM_SERVICE_URL:-http://vsm-service:5000}
+      AI_CATEGORIZER_URL: ${AI_CATEGORIZER_URL:-http://ai-categorizer:5000}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-minio:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-forensics}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-forensics123}
+      MINIO_BUCKET: ${MINIO_BUCKET:-media}
+      MINIO_SECURE: ${MINIO_SECURE:-false}
+    volumes:
+      - ./backend/app:/app/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - frontend-net
+      - backend-net
+      - processing-net
+
+  worker:
+    build:
+      context: ./workers
+      dockerfile: Dockerfile
+    env_file:
+      - ./workers/.env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://forensics:forensics123@db:5432/forensics}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      FACE_SERVICE_URL: ${FACE_SERVICE_URL:-http://face-service:5000}
+      HASH_SERVICE_URL: ${HASH_SERVICE_URL:-http://hash-service:5000}
+      VSM_SERVICE_URL: ${VSM_SERVICE_URL:-http://vsm-service:5000}
+      AI_CATEGORIZER_URL: ${AI_CATEGORIZER_URL:-http://ai-categorizer:5000}
+      GEOCODER_URL: ${GEOCODER_URL:-http://geocoder:5000}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-minio:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-forensics}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-forensics123}
+      MINIO_BUCKET: ${MINIO_BUCKET:-media}
+      MINIO_SECURE: ${MINIO_SECURE:-false}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    command: celery -A celery_app worker --loglevel=info --queues=celery,media --concurrency=2
+    restart: unless-stopped
+    networks:
+      - backend-net
+      - processing-net
+
+  worker-faces:
+    build:
+      context: ./workers
+      dockerfile: Dockerfile
+    env_file:
+      - ./workers/.env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://forensics:forensics123@db:5432/forensics}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      FACE_SERVICE_URL: ${FACE_SERVICE_URL:-http://face-service:5000}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-minio:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-forensics}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-forensics123}
+      MINIO_BUCKET: ${MINIO_BUCKET:-media}
+      MINIO_SECURE: ${MINIO_SECURE:-false}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    command: celery -A celery_app worker --loglevel=info --queues=faces --concurrency=2
+    restart: unless-stopped
+    networks:
+      - backend-net
+      - processing-net
+
+  worker-signatures:
+    build:
+      context: ./workers
+      dockerfile: Dockerfile
+    env_file:
+      - ./workers/.env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://forensics:forensics123@db:5432/forensics}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      HASH_SERVICE_URL: ${HASH_SERVICE_URL:-http://hash-service:5000}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-minio:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-forensics}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-forensics123}
+      MINIO_BUCKET: ${MINIO_BUCKET:-media}
+      MINIO_SECURE: ${MINIO_SECURE:-false}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    command: celery -A celery_app worker --loglevel=info --queues=signatures --concurrency=2
+    restart: unless-stopped
+    networks:
+      - backend-net
+      - processing-net
+
+  worker-categorization:
+    build:
+      context: ./workers
+      dockerfile: Dockerfile
+    env_file:
+      - ./workers/.env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://forensics:forensics123@db:5432/forensics}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      AI_CATEGORIZER_URL: ${AI_CATEGORIZER_URL:-http://ai-categorizer:5000}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-minio:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-forensics}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-forensics123}
+      MINIO_BUCKET: ${MINIO_BUCKET:-media}
+      MINIO_SECURE: ${MINIO_SECURE:-false}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: celery -A celery_app worker --loglevel=info --queues=categorization --concurrency=1
+    restart: unless-stopped
+    networks:
+      - backend-net
+      - processing-net
+
+  worker-watchlist:
+    build:
+      context: ./workers
+      dockerfile: Dockerfile
+    env_file:
+      - ./workers/.env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://forensics:forensics123@db:5432/forensics}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-minio:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-forensics}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-forensics123}
+      MINIO_BUCKET: ${MINIO_BUCKET:-media}
+      MINIO_SECURE: ${MINIO_SECURE:-false}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    command: celery -A celery_app worker --loglevel=info --queues=watchlist --concurrency=2
+    restart: unless-stopped
+    networks:
+      - backend-net
+      - processing-net
+
+  flower:
+    build:
+      context: ./workers
+      dockerfile: Dockerfile
+    env_file:
+      - ./workers/.env
+    environment:
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+    command: celery -A celery_app flower --port=5555
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - frontend-net
+      - backend-net
+
+  face-service:
+    build:
+      context: ./face-service
+      dockerfile: Dockerfile
+    environment:
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-minio:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-forensics}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-forensics123}
+      MINIO_BUCKET: ${MINIO_BUCKET:-media}
+      MINIO_SECURE: ${MINIO_SECURE:-false}
+    restart: unless-stopped
+    networks:
+      - processing-net
+
+  hash-service:
+    build:
+      context: ./hash-service
+      dockerfile: Dockerfile
+    environment:
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-minio:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-forensics}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-forensics123}
+      MINIO_BUCKET: ${MINIO_BUCKET:-media}
+      MINIO_SECURE: ${MINIO_SECURE:-false}
+    restart: unless-stopped
+    networks:
+      - processing-net
+
+  vsm-service:
+    build:
+      context: ./vsm-service
+      dockerfile: Dockerfile
+    environment:
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-minio:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-forensics}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-forensics123}
+      MINIO_BUCKET: ${MINIO_BUCKET:-media}
+      MINIO_SECURE: ${MINIO_SECURE:-false}
+    restart: unless-stopped
+    networks:
+      - processing-net
+
+  ai-categorizer:
+    build:
+      context: ./ai-categorizer
+      dockerfile: Dockerfile
+    environment:
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-minio:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-forensics}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-forensics123}
+      MINIO_BUCKET: ${MINIO_BUCKET:-media}
+      MINIO_SECURE: ${MINIO_SECURE:-false}
+    volumes:
+      - ai_models:/app/models
+    restart: unless-stopped
+    networks:
+      - processing-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    env_file:
+      - ./frontend/.env
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-/api}
+      VITE_KEYCLOAK_URL: ${VITE_KEYCLOAK_URL:-/auth}
+      VITE_KEYCLOAK_REALM: ${VITE_KEYCLOAK_REALM:-forensics}
+      VITE_KEYCLOAK_CLIENT_ID: ${VITE_KEYCLOAK_CLIENT_ID:-forensics-ui}
+      VITE_OSM_URL: ${VITE_OSM_URL:-/osm}
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - frontend-net
+
+networks:
+  frontend-net:
+  backend-net:
+  processing-net:
+  auth-net:
+  osm-net:
+
+volumes:
+  postgres_data:
+  minio_data:
+  keycloak_db_data:
+  osm_db_data:
+  ai_models:

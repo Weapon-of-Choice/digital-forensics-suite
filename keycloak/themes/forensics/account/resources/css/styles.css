@@ -1,0 +1,356 @@
+/* Forensics Platform - Custom Keycloak Login Theme */
+/* Dark purple gradient style matching the app */
+
+/* ============================================
+   CSS Variables - Brand Colors
+   ============================================ */
+:root {
+  --forensics-bg-dark: #111827;
+  --forensics-bg-card: #1f2937;
+  --forensics-purple-500: #8b5cf6;
+  --forensics-purple-600: #7c3aed;
+  --forensics-purple-700: #6d28d9;
+  --forensics-pink-500: #ec4899;
+  --forensics-text-white: #ffffff;
+  --forensics-text-gray: #9ca3af;
+  --forensics-text-light: #d1d5db;
+  --forensics-border: #374151;
+  --forensics-input-bg: #374151;
+  --forensics-error: #ef4444;
+  --forensics-success: #10b981;
+}
+
+/* ============================================
+   Base Layout - Full page dark gradient
+   ============================================ */
+body {
+  background: linear-gradient(135deg, #111827 0%, #1e1b4b 50%, #111827 100%);
+  min-height: 100vh;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Background decorative gradient orb */
+body::before {
+  content: '';
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 1024px;
+  height: 1024px;
+  background: radial-gradient(circle, rgba(119, 117, 214, 0.3) 0%, rgba(233, 53, 193, 0.1) 50%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ============================================
+   Login Container
+   ============================================ */
+#kc-header {
+  display: none;
+}
+
+#kc-header-wrapper {
+  display: none;
+}
+
+.login-pf body {
+  background: linear-gradient(135deg, #111827 0%, #1e1b4b 50%, #111827 100%);
+}
+
+#kc-container {
+  position: relative;
+  z-index: 1;
+}
+
+#kc-container-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 2rem;
+}
+
+/* ============================================
+   Login Card
+   ============================================ */
+#kc-form-wrapper,
+#kc-content {
+  background: rgba(31, 41, 55, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 1.5rem;
+  padding: 3rem;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.5),
+    0 0 100px rgba(139, 92, 246, 0.1);
+}
+
+#kc-content-wrapper {
+  padding: 0;
+}
+
+/* ============================================
+   Logo / Branding
+   ============================================ */
+#kc-logo-wrapper {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+#kc-page-title {
+  color: var(--forensics-text-white);
+  font-size: 1.75rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.025em;
+}
+
+/* Custom title styling */
+.kc-logo-text {
+  background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ============================================
+   Form Elements
+   ============================================ */
+#kc-form-login {
+  margin-top: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+label {
+  display: block;
+  color: var(--forensics-text-light);
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="email"],
+.pf-c-form-control {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  background: var(--forensics-input-bg);
+  border: 1px solid var(--forensics-border);
+  border-radius: 0.5rem;
+  color: var(--forensics-text-white);
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="email"]:focus,
+.pf-c-form-control:focus {
+  outline: none;
+  border-color: var(--forensics-purple-500);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+}
+
+input::placeholder {
+  color: var(--forensics-text-gray);
+}
+
+/* ============================================
+   Buttons
+   ============================================ */
+#kc-login,
+.btn-primary,
+input[type="submit"],
+button[type="submit"] {
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  background: linear-gradient(135deg, var(--forensics-purple-600) 0%, var(--forensics-purple-700) 100%);
+  border: none;
+  border-radius: 0.5rem;
+  color: var(--forensics-text-white);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 1rem;
+}
+
+#kc-login:hover,
+.btn-primary:hover,
+input[type="submit"]:hover,
+button[type="submit"]:hover {
+  background: linear-gradient(135deg, var(--forensics-purple-500) 0%, var(--forensics-purple-600) 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px -10px rgba(139, 92, 246, 0.5);
+}
+
+#kc-login:active,
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Secondary buttons */
+.btn-default,
+#kc-registration a,
+#kc-social-providers a {
+  display: inline-block;
+  padding: 0.75rem 1.25rem;
+  background: transparent;
+  border: 1px solid var(--forensics-border);
+  border-radius: 0.5rem;
+  color: var(--forensics-text-light);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.btn-default:hover,
+#kc-registration a:hover,
+#kc-social-providers a:hover {
+  background: var(--forensics-input-bg);
+  border-color: var(--forensics-purple-500);
+  color: var(--forensics-text-white);
+}
+
+/* ============================================
+   Links
+   ============================================ */
+a {
+  color: var(--forensics-purple-500);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--forensics-pink-500);
+}
+
+#kc-registration,
+#kc-form-options {
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
+#kc-form-options .checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--forensics-text-gray);
+  font-size: 0.875rem;
+}
+
+#kc-form-options .checkbox input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--forensics-purple-500);
+}
+
+.kc-social-section {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--forensics-border);
+}
+
+/* ============================================
+   Alerts / Messages
+   ============================================ */
+.alert {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+}
+
+.alert-error,
+.alert-danger {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+.alert-warning {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #fcd34d;
+}
+
+.alert-success {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #6ee7b7;
+}
+
+.alert-info {
+  background: rgba(139, 92, 246, 0.15);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  color: #c4b5fd;
+}
+
+/* ============================================
+   Info/Instruction Messages
+   ============================================ */
+#kc-info-message,
+.kc-feedback-text {
+  color: var(--forensics-text-gray);
+  font-size: 0.875rem;
+  text-align: center;
+  margin-top: 1rem;
+}
+
+/* ============================================
+   Footer
+   ============================================ */
+#kc-locale,
+#kc-attempts-remaining {
+  color: var(--forensics-text-gray);
+  font-size: 0.75rem;
+  text-align: center;
+  margin-top: 1.5rem;
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+@media (max-width: 480px) {
+  #kc-form-wrapper,
+  #kc-content {
+    padding: 2rem 1.5rem;
+    margin: 1rem;
+    border-radius: 1rem;
+  }
+  
+  #kc-page-title {
+    font-size: 1.5rem;
+  }
+}
+
+/* ============================================
+   Hide unwanted elements
+   ============================================ */
+.pf-c-login__main-footer-band,
+.pf-c-login__footer {
+  display: none;
+}
+
+/* ============================================
+   Password visibility toggle
+   ============================================ */
+.pf-c-button.pf-m-control {
+  background: var(--forensics-input-bg);
+  border: 1px solid var(--forensics-border);
+  color: var(--forensics-text-gray);
+}
+
+.pf-c-button.pf-m-control:hover {
+  background: var(--forensics-border);
+  color: var(--forensics-text-white);
+}
