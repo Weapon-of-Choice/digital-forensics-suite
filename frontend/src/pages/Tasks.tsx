@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ListTodo, CheckCircle2, Circle, Clock, Plus, X, Trash2, Loader2 } from 'lucide-react'
-import { formatDistanceToNow, format, isPast, isToday, isTomorrow } from 'date-fns'
+import { formatDueDate, isPast, isToday, isTomorrow } from 'date-fns'
+import { format } from 'date-fns'
 import { api, Task, Case } from '../api'
 
 type StatusFilter = 'all' | 'pending' | 'in_progress' | 'completed'
@@ -106,7 +107,7 @@ export default function Tasks() {
     return c ? c.name : `Case #${caseId}`
   }
 
-  const formatDueDate = (dateStr?: string) => {
+  const formatDate = (dateStr?: string) => {
     if (!dateStr) return null
     const date = new Date(dateStr)
     if (isToday(date)) return 'Today'
@@ -143,22 +144,6 @@ export default function Tasks() {
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   })
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-slate-900" />
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
-        Failed to load tasks. Please try again.
-      </div>
-    )
-  }
-
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -180,7 +165,15 @@ export default function Tasks() {
         </div>
       </div>
 
-      {sortedTasks.length === 0 ? (
+      {isLoading ? (
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-slate-900" />
+        </div>
+      ) : error ? (
+        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
+          Failed to load tasks. Please try again.
+        </div>
+      ) : sortedTasks.length === 0 ? (
         <div className="bg-white border border-slate-200 rounded-lg p-12 text-center shadow-sm">
           <ListTodo className="w-12 h-12 text-slate-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-slate-900 mb-2">No tasks found</h3>
@@ -250,7 +243,7 @@ export default function Tasks() {
                   {task.due_date && (
                     <>
                       <Clock size={14} />
-                      {formatDueDate(task.due_date)}
+                      {formatDate(task.due_date)}
                     </>
                   )}
                 </div>

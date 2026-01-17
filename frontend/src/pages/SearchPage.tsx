@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { api } from '../api'
-import { Search, Image, Fingerprint, MapPin } from 'lucide-react'
+import { Search, Image, Fingerprint, MapPin, Type, FolderOpen, User } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
-type SearchType = 'similar' | 'signature' | 'location'
+type SearchType = 'text' | 'similar' | 'signature' | 'location'
 
 export default function SearchPage() {
-  const [searchType, setSearchType] = useState<SearchType>('similar')
+  const [searchType, setSearchType] = useState<SearchType>('text')
+  const [textQuery, setTextQuery] = useState('')
   const [mediaId, setMediaId] = useState('')
   const [lat, setLat] = useState('')
   const [lon, setLon] = useState('')
@@ -17,8 +18,19 @@ export default function SearchPage() {
   const handleSearch = async () => {
     setSearching(true)
     try {
-      let data: any[]
+      let data: any[] = []
       switch (searchType) {
+        case 'text':
+          if (!textQuery.trim()) break
+          const [cases, persons] = await Promise.all([
+            api.searchCases(textQuery),
+            api.searchPersons(textQuery)
+          ])
+          data = [
+            ...cases.map(c => ({ ...c, resultType: 'case' })),
+            ...persons.map(p => ({ ...p, resultType: 'person' }))
+          ]
+          break
         case 'similar':
           data = await api.searchSimilar(Number(mediaId))
           break
@@ -28,8 +40,6 @@ export default function SearchPage() {
         case 'location':
           data = await api.searchByLocation(Number(lat), Number(lon), Number(radius))
           break
-        default:
-          data = []
       }
       setResults(data)
     } catch (e) {
@@ -44,32 +54,43 @@ export default function SearchPage() {
       <h1 className="text-2xl font-bold mb-6 text-slate-900">Search</h1>
 
       <div className="bg-white rounded-lg p-6 mb-6 border border-slate-200 shadow-sm">
-        <div className="flex gap-4 mb-6">
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+          <button
+            onClick={() => setSearchType('text')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md transition font-medium whitespace-nowrap ${
+              searchType === 'text' 
+                ? 'bg-violet-600 text-white shadow-sm' 
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+            }`}
+          >
+            <Type size={18} />
+            Text Search
+          </button>
           <button
             onClick={() => setSearchType('similar')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md transition font-medium ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-md transition font-medium whitespace-nowrap ${
               searchType === 'similar' 
                 ? 'bg-violet-600 text-white shadow-sm' 
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
             }`}
           >
             <Image size={18} />
-            Similar Images (pHash)
+            Similar Images
           </button>
           <button
             onClick={() => setSearchType('signature')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md transition font-medium ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-md transition font-medium whitespace-nowrap ${
               searchType === 'signature' 
                 ? 'bg-violet-600 text-white shadow-sm' 
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
             }`}
           >
             <Fingerprint size={18} />
-            Image Signature (ORB)
+            Image Signature
           </button>
           <button
             onClick={() => setSearchType('location')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md transition font-medium ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-md transition font-medium whitespace-nowrap ${
               searchType === 'location' 
                 ? 'bg-violet-600 text-white shadow-sm' 
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
@@ -79,6 +100,27 @@ export default function SearchPage() {
             Location
           </button>
         </div>
+
+        {searchType === 'text' && (
+          <div className="flex gap-4">
+            <input
+              type="text"
+              placeholder="Search cases, persons, media..."
+              value={textQuery}
+              onChange={e => setTextQuery(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleSearch()}
+              className="flex-1 bg-white text-slate-900 border border-slate-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 placeholder-slate-400"
+            />
+            <button
+              onClick={handleSearch}
+              disabled={!textQuery.trim() || searching}
+              className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-medium disabled:opacity-50 px-6 py-2 rounded-md transition shadow-sm"
+            >
+              <Search size={18} />
+              {searching ? 'Searching...' : 'Search'}
+            </button>
+          </div>
+        )}
 
         {(searchType === 'similar' || searchType === 'signature') && (
           <div className="flex gap-4">
@@ -145,26 +187,55 @@ export default function SearchPage() {
             <p className="text-slate-500">No matches found.</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {results.map((r, i) => (
-                <div key={i} className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                  <div className="aspect-video bg-slate-200 rounded-md mb-3 overflow-hidden">
-                    <img
-                      src={api.getMediaThumbnail(r.media_id || r.id)}
-                      alt=""
-                      className="w-full h-full object-cover"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                    />
+              {results.map((r, i) => {
+                // Render Case result
+                if (r.resultType === 'case') {
+                  return (
+                    <Link key={i} to={`/cases/${r.id}`} className="bg-slate-50 hover:bg-slate-100 rounded-lg p-4 border border-slate-200 transition group">
+                      <div className="flex items-center gap-2 mb-2 text-violet-600">
+                        <FolderOpen size={20} />
+                        <span className="font-semibold text-sm uppercase">Case</span>
+                      </div>
+                      <p className="font-medium text-slate-900 group-hover:text-violet-600">{r.name}</p>
+                      <p className="text-sm text-slate-500 line-clamp-2">{r.description}</p>
+                    </Link>
+                  )
+                }
+                // Render Person result
+                if (r.resultType === 'person') {
+                  return (
+                    <div key={i} className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                      <div className="flex items-center gap-2 mb-2 text-amber-600">
+                        <User size={20} />
+                        <span className="font-semibold text-sm uppercase">Person</span>
+                      </div>
+                      <p className="font-medium text-slate-900">{r.name}</p>
+                      {r.aliases && <p className="text-xs text-slate-500">AKA: {r.aliases}</p>}
+                    </div>
+                  )
+                }
+                // Render Media result (existing)
+                return (
+                  <div key={i} className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                    <div className="aspect-video bg-slate-200 rounded-md mb-3 overflow-hidden">
+                      <img
+                        src={api.getMediaThumbnail(r.media_id || r.id)}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                      />
+                    </div>
+                    <p className="font-medium text-slate-900">{r.original_filename || `Media #${r.media_id || r.id}`}</p>
+                    <p className="text-sm text-slate-500">Case #{r.case_id}</p>
+                    {r.distance !== undefined && (
+                      <p className="text-xs text-slate-500 mt-1">Distance: {r.distance}</p>
+                    )}
+                    {r.match_score !== undefined && (
+                      <p className="text-xs text-emerald-600 mt-1">Score: {(r.match_score * 100).toFixed(1)}%</p>
+                    )}
                   </div>
-                  <p className="font-medium text-slate-900">{r.original_filename || `Media #${r.media_id || r.id}`}</p>
-                  <p className="text-sm text-slate-500">Case #{r.case_id}</p>
-                  {r.distance !== undefined && (
-                    <p className="text-xs text-slate-500 mt-1">Distance: {r.distance}</p>
-                  )}
-                  {r.match_score !== undefined && (
-                    <p className="text-xs text-emerald-600 mt-1">Score: {(r.match_score * 100).toFixed(1)}%</p>
-                  )}
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>

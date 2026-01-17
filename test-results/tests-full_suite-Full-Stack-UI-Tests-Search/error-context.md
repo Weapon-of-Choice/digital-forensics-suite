@@ -25,7 +25,7 @@
           - img [ref=e25]
           - text: Map
       - listitem [ref=e27]:
-        - link "Search" [active] [ref=e28] [cursor=pointer]:
+        - link "Search" [ref=e28] [cursor=pointer]:
           - /url: /search
           - img [ref=e29]
           - text: Search
@@ -77,18 +77,21 @@
       - heading "Search" [level=1] [ref=e77]
       - generic [ref=e78]:
         - generic [ref=e79]:
-          - button "Similar Images (pHash)" [ref=e80] [cursor=pointer]:
+          - button "Text Search" [active] [ref=e80] [cursor=pointer]:
             - img [ref=e81]
-            - text: Similar Images (pHash)
-          - button "Image Signature (ORB)" [ref=e85] [cursor=pointer]:
-            - img [ref=e86]
-            - text: Image Signature (ORB)
-          - button "Location" [ref=e95] [cursor=pointer]:
-            - img [ref=e96]
+            - text: Text Search
+          - button "Similar Images" [ref=e83] [cursor=pointer]:
+            - img [ref=e84]
+            - text: Similar Images
+          - button "Image Signature" [ref=e88] [cursor=pointer]:
+            - img [ref=e89]
+            - text: Image Signature
+          - button "Location" [ref=e98] [cursor=pointer]:
+            - img [ref=e99]
             - text: Location
-        - generic [ref=e99]:
-          - spinbutton [ref=e100]
-          - button "Search" [disabled] [ref=e101]:
-            - img [ref=e102]
+        - generic [ref=e102]:
+          - textbox "Search cases, persons, media..." [ref=e103]: Real Data
+          - button "Search" [ref=e104] [cursor=pointer]:
+            - img [ref=e105]
             - text: Search
 ```

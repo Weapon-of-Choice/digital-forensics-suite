@@ -59,9 +59,10 @@ test.describe('Full Stack UI Tests', () => {
     await expect(page.locator('h1:has-text("Watchlists")')).toBeVisible();
     
     const wlName = `WL ${Date.now()}`;
+    await expect(page.getByText('New Watchlist')).toBeVisible();
     await page.click('text=New Watchlist');
-    await page.fill('input[placeholder="Watchlist Name"]', wlName);
-    await page.click('button:has-text("Create")');
+    await page.fill('input[placeholder="Watchlist name"]', wlName);
+    await page.click('.fixed button:has-text("Create")');
     await expect(page.getByText(wlName)).toBeVisible();
   });
 
@@ -70,10 +71,12 @@ test.describe('Full Stack UI Tests', () => {
     await expect(page.getByRole('heading', { name: 'Search' })).toBeVisible();
     
     // Search for "Real Data Case" (seeded)
+    await page.waitForSelector('input[placeholder="Search cases, persons, media..."]', { state: 'visible' });
     const input = page.locator('input[placeholder="Search cases, persons, media..."]');
     await expect(input).toBeVisible();
     await input.fill('Real Data');
     await page.click('button:has-text("Search")');
+    await expect(page.locator('h2:has-text("Results")').or(page.getByText('No matches found'))).toBeVisible({ timeout: 10000 });
     await expect(page.getByText('Real Data Case')).toBeVisible();
   });
   

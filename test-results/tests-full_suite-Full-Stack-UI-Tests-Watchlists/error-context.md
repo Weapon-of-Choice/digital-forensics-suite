@@ -45,7 +45,7 @@
           - img [ref=e44]
           - text: Tasks
       - listitem [ref=e47]:
-        - link "Watchlists" [active] [ref=e48] [cursor=pointer]:
+        - link "Watchlists" [ref=e48] [cursor=pointer]:
           - /url: /watchlists
           - img [ref=e49]
           - text: Watchlists
@@ -80,13 +80,31 @@
           - generic [ref=e80] [cursor=pointer]:
             - checkbox "Active only" [ref=e81]
             - generic [ref=e82]: Active only
-          - button "Create List" [ref=e83] [cursor=pointer]:
+          - button "New Watchlist" [ref=e83] [cursor=pointer]:
             - img [ref=e84]
-            - text: Create List
+            - text: New Watchlist
       - generic [ref=e85]:
         - img [ref=e86]
         - heading "No watchlists yet" [level=3] [ref=e88]
         - button "Create Watchlist" [ref=e89] [cursor=pointer]:
           - img [ref=e90]
           - text: Create Watchlist
+      - generic [ref=e92]:
+        - generic [ref=e93]:
+          - heading "Create Watchlist" [level=2] [ref=e94]
+          - button [ref=e95] [cursor=pointer]:
+            - img [ref=e96]
+        - generic [ref=e99]:
+          - generic [ref=e100]:
+            - generic [ref=e101]: Name *
+            - textbox "Watchlist name" [active] [ref=e102]: WL 1768634999507
+          - generic [ref=e103]:
+            - generic [ref=e104]: Description
+            - textbox "Optional description" [ref=e105]
+          - generic [ref=e106]:
+            - checkbox "Alert on match" [checked] [ref=e107]
+            - generic [ref=e108]: Alert on match
+        - generic [ref=e109]:
+          - button "Cancel" [ref=e110] [cursor=pointer]
+          - button "Create" [ref=e111] [cursor=pointer]
 ```

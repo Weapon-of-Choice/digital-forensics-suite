@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Shield, Plus, X, Eye, ChevronRight, Edit2, Trash2, Loader2 } from 'lucide-react'
+import { Shield, Plus, X, Eye, Edit2, Trash2, Loader2 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { api, Watchlist, WatchlistEntry } from '../api'
 
@@ -57,7 +57,7 @@ export default function Watchlists() {
   const deleteEntryMutation = useMutation({
     mutationFn: ({ watchlistId, entryId }: { watchlistId: number; entryId: number }) =>
       api.deleteWatchlistEntry(watchlistId, entryId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['watchlist-entries', selectedWatchlist?.id] }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['watchlist-entries', selectedWatchlist?.id] }) },
   })
 
   const openCreateModal = () => { setFormName(''); setFormDescription(''); setFormAlertOnMatch(true); setShowCreateModal(true) }
@@ -103,8 +103,6 @@ export default function Watchlists() {
     deleteEntryMutation.mutate({ watchlistId: selectedWatchlist.id, entryId: entry.id })
   }
 
-  if (isLoading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-violet-600" /></div>
-
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -115,12 +113,14 @@ export default function Watchlists() {
             <span className="text-sm text-slate-600">Active only</span>
           </label>
           <button onClick={openCreateModal} className="bg-violet-600 hover:bg-violet-700 text-white font-medium px-4 py-2 rounded-lg transition shadow-sm flex items-center gap-2">
-            <Plus size={20} /> Create List
+            <Plus size={20} /> New Watchlist
           </button>
         </div>
       </div>
 
-      {watchlists.length === 0 ? (
+      {isLoading ? (
+        <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-violet-600" /></div>
+      ) : watchlists.length === 0 ? (
         <div className="bg-white border border-slate-200 rounded-lg p-12 text-center shadow-sm">
           <Shield className="w-12 h-12 text-slate-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-slate-900 mb-2">No watchlists yet</h3>
