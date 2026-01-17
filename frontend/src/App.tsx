@@ -10,6 +10,7 @@ import CaseDetail from './pages/CaseDetail'
 import MapView from './pages/MapView'
 import SearchPage from './pages/SearchPage'
 import Timeline from './pages/Timeline'
+import Tags from './pages/Tags'
 import Notes from './pages/Notes'
 import Tasks from './pages/Tasks'
 import Watchlists from './pages/Watchlists'
@@ -70,6 +71,7 @@ export default function App() {
             <Route path="/map" element={<ProtectedRoute><MapView /></ProtectedRoute>} />
             <Route path="/search" element={<ProtectedRoute><SearchPage /></ProtectedRoute>} />
             <Route path="/timeline" element={<ProtectedRoute><Timeline /></ProtectedRoute>} />
+            <Route path="/tags" element={<ProtectedRoute><Tags /></ProtectedRoute>} />
             <Route path="/notes" element={<ProtectedRoute><Notes /></ProtectedRoute>} />
             <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
             <Route path="/watchlists" element={<ProtectedRoute><Watchlists /></ProtectedRoute>} />

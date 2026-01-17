@@ -87,6 +87,9 @@ export const api = {
   getCategories: () => fetchApi<Category[]>('/categories'),
   createCategory: (data: { name: string; description?: string; color?: string }) =>
     fetchApi<Category>('/categories', { method: 'POST', body: JSON.stringify(data) }),
+  updateCategory: (id: number, data: { name?: string; description?: string; color?: string }) =>
+    fetchApi<Category>(`/categories/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteCategory: (id: number) => fetchApi(`/categories/${id}`, { method: 'DELETE' }),
   
   getMediaCategories: (mediaId: number) => fetchApi<MediaCategory[]>(`/media/${mediaId}/categories`),
   addMediaCategory: (mediaId: number, categoryId: number) =>

@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import { 
-  FolderOpen, Map, Home, Clock, StickyNote, 
+  FolderOpen, Map, Home, Clock, StickyNote, Tag,
   ListTodo, Shield, Bell, Users, Activity, LogOut, LogIn, Loader2
 } from 'lucide-react'
 import { useAuth } from '../../lib/AuthContext'
@@ -11,6 +11,7 @@ const navItems = [
   { path: '/map', icon: Map, label: 'Map' },
   // Search removed from sidebar
   { path: '/timeline', icon: Clock, label: 'Timeline' },
+  { path: '/tags', icon: Tag, label: 'Tags' },
   { path: '/notes', icon: StickyNote, label: 'Notes' },
   { path: '/tasks', icon: ListTodo, label: 'Tasks' },
   { path: '/watchlists', icon: Shield, label: 'Watchlists' },

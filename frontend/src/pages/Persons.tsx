@@ -3,12 +3,17 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Users, Search, Filter, X, Loader2, Shield, Calendar, Globe, Plus, Edit2, Trash2 } from 'lucide-react'
 import { formatDistanceToNow, format } from 'date-fns'
 import { api, Person } from '../api'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog'
+import ConfirmDialog from '../components/ui/confirm-dialog'
 
 export default function Persons() {
   const queryClient = useQueryClient()
   const [searchQuery, setSearchQuery] = useState('')
   const [watchlistOnly, setWatchlistOnly] = useState(false)
+  
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null)
+  const [personToDelete, setPersonToDelete] = useState<Person | null>(null)
+  
   const [showViewModal, setShowViewModal] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
@@ -39,7 +44,7 @@ export default function Persons() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => api.deletePerson(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['persons'] }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['persons'] }) },
   })
 
   const filteredPersons = useMemo(() => {
@@ -104,8 +109,8 @@ export default function Persons() {
     })
   }
 
-  const handleDelete = (person: Person) => {
-    if (confirm(`Delete person "${person.name}"?`)) deleteMutation.mutate(person.id)
+  const handleDelete = () => {
+    if (personToDelete) deleteMutation.mutate(personToDelete.id)
   }
 
   const getInitials = (name: string) => {
@@ -113,7 +118,13 @@ export default function Persons() {
     return parts.length >= 2 ? `${parts[0][0]}${parts[1][0]}`.toUpperCase() : name.substring(0, 2).toUpperCase()
   }
 
-  if (isLoading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-violet-600" /></div>
+  const safeDate = (dateStr: string) => {
+    try {
+      return formatDistanceToNow(new Date(dateStr), { addSuffix: true })
+    } catch {
+      return 'Unknown date'
+    }
+  }
 
   return (
     <div>
@@ -134,7 +145,9 @@ export default function Persons() {
         </div>
       </div>
 
-      {filteredPersons.length === 0 ? (
+      {isLoading ? (
+        <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-violet-600" /></div>
+      ) : filteredPersons.length === 0 ? (
         <div className="bg-white border border-slate-200 rounded-lg p-12 text-center shadow-sm">
           <Users className="w-12 h-12 text-slate-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-slate-900 mb-2">No persons found</h3>
@@ -164,7 +177,7 @@ export default function Persons() {
                 </div>
                 <div className="flex gap-2 border-t border-slate-100 pt-3">
                   <button onClick={() => openEditModal(person)} className="flex-1 py-1 text-xs text-slate-500 hover:text-violet-600 transition flex items-center justify-center gap-1"><Edit2 size={12} /> Edit</button>
-                  <button onClick={() => handleDelete(person)} className="py-1 px-2 text-xs text-red-500 hover:text-red-600 transition"><Trash2 size={12} /></button>
+                  <button onClick={() => setPersonToDelete(person)} className="py-1 px-2 text-xs text-red-500 hover:text-red-600 transition"><Trash2 size={12} /></button>
                 </div>
               </div>
             </div>
@@ -173,93 +186,101 @@ export default function Persons() {
       )}
 
       {/* View Modal */}
-      {showViewModal && selectedPerson && (
-        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg">
-            <div className="flex items-center justify-between p-4 border-b border-slate-200">
-              <h2 className="text-lg font-semibold text-slate-900">Person Details</h2>
-              <button onClick={closeViewModal} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
-            </div>
-            <div className="p-6">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 rounded-full bg-slate-200 flex items-center justify-center text-xl font-bold text-slate-500">{getInitials(selectedPerson.name)}</div>
-                <div>
-                  <h3 className="text-xl font-bold text-slate-900">{selectedPerson.name}</h3>
-                  <p className="text-sm text-slate-500">ID: {selectedPerson.id}</p>
-                  {selectedPerson.is_watchlist && <span className="inline-flex items-center gap-1 text-xs bg-red-50 text-red-600 px-2 py-0.5 rounded border border-red-100 mt-1"><Shield size={12} /> On Watchlist</span>}
+      <Dialog open={showViewModal} onOpenChange={setShowViewModal}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Person Details</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            {selectedPerson && (
+              <>
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-full bg-slate-200 flex items-center justify-center text-xl font-bold text-slate-500">{getInitials(selectedPerson.name)}</div>
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-900">{selectedPerson.name}</h3>
+                    <p className="text-sm text-slate-500">ID: {selectedPerson.id}</p>
+                    {selectedPerson.is_watchlist && <span className="inline-flex items-center gap-1 text-xs bg-red-50 text-red-600 px-2 py-0.5 rounded border border-red-100 mt-1"><Shield size={12} /> On Watchlist</span>}
+                  </div>
                 </div>
-              </div>
-              <div className="space-y-4">
-                {selectedPerson.aliases && <div><p className="text-xs text-slate-500">Aliases</p><p className="font-medium text-slate-900">{selectedPerson.aliases}</p></div>}
-                {selectedPerson.date_of_birth && <div className="flex items-center gap-3"><div className="p-2 bg-slate-100 rounded-lg"><Calendar size={18} className="text-slate-500" /></div><div><p className="text-xs text-slate-500">Date of Birth</p><p className="font-medium text-slate-900">{format(new Date(selectedPerson.date_of_birth), 'MMMM d, yyyy')}</p></div></div>}
-                {selectedPerson.nationality && <div className="flex items-center gap-3"><div className="p-2 bg-slate-100 rounded-lg"><Globe size={18} className="text-slate-500" /></div><div><p className="text-xs text-slate-500">Nationality</p><p className="font-medium text-slate-900">{selectedPerson.nationality}</p></div></div>}
-                {selectedPerson.threat_level && <div><p className="text-xs text-slate-500">Threat Level</p><p className={`font-medium capitalize ${selectedPerson.threat_level === 'high' ? 'text-red-600' : selectedPerson.threat_level === 'medium' ? 'text-amber-600' : 'text-slate-900'}`}>{selectedPerson.threat_level}</p></div>}
-                {selectedPerson.description && <div className="pt-4 border-t border-slate-100"><p className="text-xs text-slate-500 mb-2">Description</p><p className="text-slate-700 text-sm whitespace-pre-wrap bg-slate-50 p-3 rounded-lg border border-slate-100">{selectedPerson.description}</p></div>}
-                <div className="pt-4 border-t border-slate-100 text-xs text-slate-400">Added {formatDistanceToNow(new Date(selectedPerson.created_at), { addSuffix: true })}</div>
-              </div>
-            </div>
-            <div className="flex justify-end p-4 border-t border-slate-200 bg-slate-50">
-              <button onClick={closeViewModal} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md transition">Close</button>
-            </div>
+                <div className="space-y-4">
+                  {selectedPerson.aliases && <div><p className="text-xs text-slate-500">Aliases</p><p className="font-medium text-slate-900">{selectedPerson.aliases}</p></div>}
+                  {selectedPerson.date_of_birth && <div className="flex items-center gap-3"><div className="p-2 bg-slate-100 rounded-lg"><Calendar size={18} className="text-slate-500" /></div><div><p className="text-xs text-slate-500">Date of Birth</p><p className="font-medium text-slate-900">{format(new Date(selectedPerson.date_of_birth), 'MMMM d, yyyy')}</p></div></div>}
+                  {selectedPerson.nationality && <div className="flex items-center gap-3"><div className="p-2 bg-slate-100 rounded-lg"><Globe size={18} className="text-slate-500" /></div><div><p className="text-xs text-slate-500">Nationality</p><p className="font-medium text-slate-900">{selectedPerson.nationality}</p></div></div>}
+                  {selectedPerson.threat_level && <div><p className="text-xs text-slate-500">Threat Level</p><p className={`font-medium capitalize ${selectedPerson.threat_level === 'high' ? 'text-red-600' : selectedPerson.threat_level === 'medium' ? 'text-amber-600' : 'text-slate-900'}`}>{selectedPerson.threat_level}</p></div>}
+                  {selectedPerson.description && <div className="pt-4 border-t border-slate-100"><p className="text-xs text-slate-500 mb-2">Description</p><p className="text-slate-700 text-sm whitespace-pre-wrap bg-slate-50 p-3 rounded-lg border border-slate-100">{selectedPerson.description}</p></div>}
+                  <div className="pt-4 border-t border-slate-100 text-xs text-slate-400">Added {safeDate(selectedPerson.created_at)}</div>
+                </div>
+              </>
+            )}
           </div>
-        </div>
-      )}
+          <DialogFooter>
+            <button onClick={closeViewModal} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md transition text-sm font-medium">Close</button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Create/Edit Modal */}
-      {(showCreateModal || showEditModal) && (
-        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-auto">
-            <div className="flex items-center justify-between p-4 border-b border-slate-200">
-              <h2 className="text-lg font-semibold text-slate-900">{showEditModal ? 'Edit Person' : 'Add Person'}</h2>
-              <button onClick={showEditModal ? closeEditModal : closeCreateModal} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+      <Dialog open={showCreateModal || showEditModal} onOpenChange={(open) => !open && (showEditModal ? closeEditModal() : closeCreateModal())}>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>{showEditModal ? 'Edit Person' : 'Add Person'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Name *</label>
+              <input type="text" value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="Full name" className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500" />
             </div>
-            <div className="p-4 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Name *</label>
-                <input type="text" value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="Full name" className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Aliases</label>
-                <input type="text" value={formAliases} onChange={(e) => setFormAliases(e.target.value)} placeholder="Known aliases (comma separated)" className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Date of Birth</label>
-                  <input type="date" value={formDob} onChange={(e) => setFormDob(e.target.value)} className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Nationality</label>
-                  <input type="text" value={formNationality} onChange={(e) => setFormNationality(e.target.value)} placeholder="e.g. British" className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Threat Level</label>
-                <select value={formThreatLevel} onChange={(e) => setFormThreatLevel(e.target.value)} className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500">
-                  <option value="">None</option>
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
-                <textarea value={formDescription} onChange={(e) => setFormDescription(e.target.value)} placeholder="Additional notes" rows={3} className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none" />
-              </div>
-              <label className="flex items-center gap-2">
-                <input type="checkbox" checked={formIsWatchlist} onChange={(e) => setFormIsWatchlist(e.target.checked)} className="w-4 h-4 text-violet-600 border-slate-300 rounded" />
-                <span className="text-sm text-slate-700">Add to watchlist</span>
-              </label>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Aliases</label>
+              <input type="text" value={formAliases} onChange={(e) => setFormAliases(e.target.value)} placeholder="Known aliases (comma separated)" className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500" />
             </div>
-            <div className="flex justify-end gap-3 p-4 border-t border-slate-200 bg-slate-50">
-              <button onClick={showEditModal ? closeEditModal : closeCreateModal} className="px-4 py-2 text-slate-700 hover:text-slate-900 transition">Cancel</button>
-              <button onClick={showEditModal ? handleUpdate : handleCreate} disabled={!formName.trim() || (showEditModal ? updateMutation.isPending : createMutation.isPending)} className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-md transition disabled:opacity-50 flex items-center gap-2">
-                {(showEditModal ? updateMutation.isPending : createMutation.isPending) && <Loader2 size={16} className="animate-spin" />}
-                {showEditModal ? 'Save' : 'Create'}
-              </button>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Date of Birth</label>
+                <input type="date" value={formDob} onChange={(e) => setFormDob(e.target.value)} className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Nationality</label>
+                <input type="text" value={formNationality} onChange={(e) => setFormNationality(e.target.value)} placeholder="e.g. British" className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500" />
+              </div>
             </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Threat Level</label>
+              <select value={formThreatLevel} onChange={(e) => setFormThreatLevel(e.target.value)} className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500">
+                <option value="">None</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+              <textarea value={formDescription} onChange={(e) => setFormDescription(e.target.value)} placeholder="Additional notes" rows={3} className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none" />
+            </div>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={formIsWatchlist} onChange={(e) => setFormIsWatchlist(e.target.checked)} className="w-4 h-4 text-violet-600 border-slate-300 rounded" />
+              <span className="text-sm text-slate-700">Add to watchlist</span>
+            </label>
           </div>
-        </div>
-      )}
+          <DialogFooter>
+            <button onClick={showEditModal ? closeEditModal : closeCreateModal} className="px-4 py-2 text-slate-700 hover:text-slate-900 transition text-sm font-medium">Cancel</button>
+            <button onClick={showEditModal ? handleUpdate : handleCreate} disabled={!formName.trim() || (showEditModal ? updateMutation.isPending : createMutation.isPending)} className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-md transition disabled:opacity-50 flex items-center gap-2 text-sm font-medium">
+              {(showEditModal ? updateMutation.isPending : createMutation.isPending) && <Loader2 size={16} className="animate-spin" />}
+              {showEditModal ? 'Save' : 'Create'}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        isOpen={!!personToDelete}
+        onClose={() => setPersonToDelete(null)}
+        onConfirm={handleDelete}
+        title="Delete Person"
+        description={`Are you sure you want to delete "${personToDelete?.name}"?`}
+        confirmText="Delete"
+        variant="danger"
+      />
     </div>
   )
 }

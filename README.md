@@ -14,6 +14,8 @@ A comprehensive platform for digital evidence management, featuring AI-driven me
 
 ## Architecture
 
+For a detailed breakdown of the system architecture, microservices, and data flow, please see [ARCHITECTURE.md](ARCHITECTURE.md).
+
 The system is built on a modular microservices architecture, orchestrated via Docker Compose.
 
 ### Core Services

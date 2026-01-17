@@ -3,12 +3,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { StickyNote, Plus, X, Pin, PinOff, Pencil, Trash2, Loader2 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { api, CaseNote, Case } from '../api'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog'
+import ConfirmDialog from '../components/ui/confirm-dialog'
 
 export default function Notes() {
   const queryClient = useQueryClient()
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showViewModal, setShowViewModal] = useState(false)
   const [selectedNote, setSelectedNote] = useState<CaseNote | null>(null)
+  const [noteToDelete, setNoteToDelete] = useState<CaseNote | null>(null)
   const [editMode, setEditMode] = useState(false)
 
   // Form state
@@ -45,7 +48,8 @@ export default function Notes() {
       api.updateNote(noteId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notes'] })
-      closeViewModal()
+      // Keep view modal open but exit edit mode
+      setEditMode(false)
     },
   })
 
@@ -55,6 +59,7 @@ export default function Notes() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notes'] })
       closeViewModal()
+      setNoteToDelete(null)
     },
   })
 
@@ -76,7 +81,7 @@ export default function Notes() {
 
   const openViewModal = (note: CaseNote) => {
     setSelectedNote(note)
-    setFormTitle(note.title)
+    setFormTitle(note.title || '')
     setFormContent(note.content)
     setFormPinned(note.is_pinned)
     setEditMode(false)
@@ -106,13 +111,13 @@ export default function Notes() {
   }
 
   const handleDelete = () => {
-    if (!selectedNote) return
-    if (confirm('Are you sure you want to delete this note?')) {
-      deleteMutation.mutate(selectedNote.id)
+    if (noteToDelete) {
+      deleteMutation.mutate(noteToDelete.id)
     }
   }
 
-  const handleTogglePin = (note: CaseNote) => {
+  const handleTogglePin = (note: CaseNote, e: React.MouseEvent) => {
+    e.stopPropagation()
     updateMutation.mutate({
       noteId: note.id,
       data: { is_pinned: !note.is_pinned },
@@ -131,6 +136,25 @@ export default function Notes() {
     return c ? c.name : `Case #${caseId}`
   }
 
+  const safeDate = (dateStr?: string) => {
+    if (!dateStr) return 'Unknown date'
+    try {
+      return formatDistanceToNow(new Date(dateStr), { addSuffix: true })
+    } catch {
+      return 'Unknown date'
+    }
+  }
+
+  if (error) {
+    return (
+      <div className="p-8 text-center text-red-600">
+        <StickyNote className="w-12 h-12 mx-auto mb-4 opacity-50" />
+        <h3 className="text-lg font-medium">Failed to load notes</h3>
+        <p className="text-sm mt-2">Please try again later.</p>
+      </div>
+    )
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -147,10 +171,6 @@ export default function Notes() {
       {isLoading ? (
         <div className="flex items-center justify-center h-64">
           <Loader2 className="w-8 h-8 animate-spin text-violet-600" />
-        </div>
-      ) : error ? (
-        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
-          Failed to load notes. Please try again.
         </div>
       ) : sortedNotes.length === 0 ? (
         <div className="bg-white border border-slate-200 rounded-lg p-12 text-center shadow-sm">
@@ -173,23 +193,26 @@ export default function Notes() {
               onClick={() => openViewModal(note)}
               className="bg-white rounded-lg p-6 border border-slate-200 hover:border-violet-300 transition cursor-pointer group shadow-sm relative"
             >
-              {note.is_pinned && (
-                <div className="absolute top-3 right-3 text-violet-600">
-                  <Pin size={16} />
-                </div>
-              )}
+              <button
+                 onClick={(e) => handleTogglePin(note, e)}
+                 className={`absolute top-3 right-3 p-1 rounded-full hover:bg-slate-100 transition ${note.is_pinned ? 'text-violet-600' : 'text-slate-300 hover:text-slate-600'}`}
+                 title={note.is_pinned ? "Unpin" : "Pin"}
+              >
+                <Pin size={16} fill={note.is_pinned ? "currentColor" : "none"} />
+              </button>
+              
               <div className="flex items-center justify-between mb-4">
                 <div className="p-2 bg-violet-50 rounded-md text-violet-600 group-hover:bg-violet-100 transition">
                   <StickyNote size={20} />
                 </div>
-                <span className="text-xs text-slate-500">
-                  {formatDistanceToNow(new Date(note.created_at), { addSuffix: true })}
+                <span className="text-xs text-slate-500 mr-6">
+                  {safeDate(note.created_at)}
                 </span>
               </div>
-              <h3 className="font-semibold text-slate-900 mb-2">{note.title}</h3>
+              <h3 className="font-semibold text-slate-900 mb-2 truncate pr-4">{note.title}</h3>
               <p className="text-slate-600 text-sm line-clamp-3">{note.content}</p>
               <div className="mt-4 pt-4 border-t border-slate-100 flex items-center gap-2">
-                <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">
+                <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded truncate max-w-full">
                   {getCaseName(note.case_id)}
                 </span>
               </div>
@@ -209,179 +232,192 @@ export default function Notes() {
       )}
 
       {/* Create Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg">
-            <div className="flex items-center justify-between p-4 border-b border-slate-200">
-              <h2 className="text-lg font-semibold text-slate-900">Create Note</h2>
-              <button onClick={closeCreateModal} className="text-slate-400 hover:text-slate-600">
-                <X size={20} />
-              </button>
-            </div>
-            <div className="p-4 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Case *</label>
-                <select
-                  value={formCaseId}
-                  onChange={(e) => setFormCaseId(e.target.value ? Number(e.target.value) : '')}
-                  className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-900"
-                >
-                  <option value="">Select a case...</option>
-                  {cases.map((c: Case) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Title *</label>
-                <input
-                  type="text"
-                  value={formTitle}
-                  onChange={(e) => setFormTitle(e.target.value)}
-                  placeholder="Note title"
-                  className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-900 placeholder-slate-400"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Content</label>
-                <textarea
-                  value={formContent}
-                  onChange={(e) => setFormContent(e.target.value)}
-                  placeholder="Write your note..."
-                  rows={5}
-                  className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-900 placeholder-slate-400 resize-none"
-                />
-              </div>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formPinned}
-                  onChange={(e) => setFormPinned(e.target.checked)}
-                  className="w-4 h-4 text-violet-600 border-slate-300 rounded focus:ring-violet-500"
-                />
-                <span className="text-sm text-slate-700">Pin this note</span>
-              </label>
-            </div>
-            <div className="flex justify-end gap-3 p-4 border-t border-slate-200 bg-slate-50">
-              <button
-                onClick={closeCreateModal}
-                className="px-4 py-2 text-slate-700 hover:text-slate-900 transition"
+      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Create Note</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Case *</label>
+              <select
+                value={formCaseId}
+                onChange={(e) => setFormCaseId(e.target.value ? Number(e.target.value) : '')}
+                className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-900"
               >
-                Cancel
-              </button>
-              <button
-                onClick={handleCreate}
-                disabled={!formCaseId || !formTitle.trim() || createMutation.isPending}
-                className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                {createMutation.isPending && <Loader2 size={16} className="animate-spin" />}
-                Create
-              </button>
+                <option value="">Select a case...</option>
+                {cases.map((c: Case) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
             </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Title *</label>
+              <input
+                type="text"
+                value={formTitle}
+                onChange={(e) => setFormTitle(e.target.value)}
+                placeholder="Note title"
+                className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-900"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Content</label>
+              <textarea
+                value={formContent}
+                onChange={(e) => setFormContent(e.target.value)}
+                placeholder="Write your note..."
+                rows={5}
+                className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-900 resize-none"
+              />
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formPinned}
+                onChange={(e) => setFormPinned(e.target.checked)}
+                className="w-4 h-4 text-violet-600 border-slate-300 rounded focus:ring-violet-500"
+              />
+              <span className="text-sm text-slate-700">Pin this note</span>
+            </label>
           </div>
-        </div>
-      )}
+          <DialogFooter>
+            <button
+              onClick={closeCreateModal}
+              className="px-4 py-2 text-slate-700 hover:text-slate-900 transition text-sm font-medium"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleCreate}
+              disabled={!formCaseId || !formTitle.trim() || createMutation.isPending}
+              className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-md transition disabled:opacity-50 flex items-center gap-2 text-sm font-medium"
+            >
+              {createMutation.isPending && <Loader2 size={16} className="animate-spin" />}
+              Create
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* View/Edit Modal */}
-      {showViewModal && selectedNote && (
-        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg">
-            <div className="flex items-center justify-between p-4 border-b border-slate-200">
-              <h2 className="text-lg font-semibold text-slate-900">
-                {editMode ? 'Edit Note' : 'View Note'}
-              </h2>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handleTogglePin(selectedNote)}
-                  className="p-2 text-slate-400 hover:text-violet-600 transition"
-                  title={selectedNote.is_pinned ? 'Unpin' : 'Pin'}
-                >
-                  {selectedNote.is_pinned ? <PinOff size={18} /> : <Pin size={18} />}
-                </button>
-                {!editMode && (
-                  <button
-                    onClick={() => setEditMode(true)}
-                    className="p-2 text-slate-400 hover:text-violet-600 transition"
-                  >
-                    <Pencil size={18} />
-                  </button>
-                )}
-                <button
-                  onClick={handleDelete}
-                  className="p-2 text-slate-400 hover:text-red-600 transition"
-                >
-                  <Trash2 size={18} />
-                </button>
-                <button onClick={closeViewModal} className="p-2 text-slate-400 hover:text-slate-600">
-                  <X size={20} />
-                </button>
+      <Dialog open={showViewModal} onOpenChange={setShowViewModal}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>{editMode ? 'Edit Note' : 'View Note'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {!editMode && (
+               <div className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded inline-block">
+                {selectedNote && getCaseName(selectedNote.case_id)}
               </div>
-            </div>
-            <div className="p-4 space-y-4">
-              <div className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded inline-block">
-                {getCaseName(selectedNote.case_id)}
-              </div>
-              {editMode ? (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Title</label>
-                    <input
-                      type="text"
-                      value={formTitle}
-                      onChange={(e) => setFormTitle(e.target.value)}
-                      className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-900"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Content</label>
-                    <textarea
-                      value={formContent}
-                      onChange={(e) => setFormContent(e.target.value)}
-                      rows={6}
-                      className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-900 resize-none"
-                    />
-                  </div>
-                </>
-              ) : (
+            )}
+            
+            {editMode ? (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Title</label>
+                  <input
+                    type="text"
+                    value={formTitle}
+                    onChange={(e) => setFormTitle(e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Content</label>
+                  <textarea
+                    value={formContent}
+                    onChange={(e) => setFormContent(e.target.value)}
+                    rows={6}
+                    className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-900 resize-none"
+                  />
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formPinned}
+                    onChange={(e) => setFormPinned(e.target.checked)}
+                    className="w-4 h-4 text-violet-600 border-slate-300 rounded focus:ring-violet-500"
+                  />
+                  <span className="text-sm text-slate-700">Pin this note</span>
+                </label>
+              </>
+            ) : (
+              selectedNote && (
                 <>
                   <h3 className="text-xl font-semibold text-slate-900">{selectedNote.title}</h3>
                   <p className="text-slate-600 whitespace-pre-wrap">{selectedNote.content}</p>
                 </>
-              )}
-              <div className="text-xs text-slate-400">
-                Created {formatDistanceToNow(new Date(selectedNote.created_at), { addSuffix: true })}
-                {selectedNote.updated_at !== selectedNote.created_at && (
-                  <> • Updated {formatDistanceToNow(new Date(selectedNote.updated_at), { addSuffix: true })}</>
-                )}
-              </div>
-            </div>
-            {editMode && (
-              <div className="flex justify-end gap-3 p-4 border-t border-slate-200 bg-slate-50">
-                <button
-                  onClick={() => {
-                    setEditMode(false)
-                    setFormTitle(selectedNote.title)
-                    setFormContent(selectedNote.content)
-                  }}
-                  className="px-4 py-2 text-slate-700 hover:text-slate-900 transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleUpdate}
-                  disabled={!formTitle.trim() || updateMutation.isPending}
-                  className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-md transition disabled:opacity-50 flex items-center gap-2"
-                >
-                  {updateMutation.isPending && <Loader2 size={16} className="animate-spin" />}
-                  Save
-                </button>
+              )
+            )}
+            
+            {!editMode && selectedNote && (
+               <div className="text-xs text-slate-400">
+                Created {safeDate(selectedNote.created_at)}
               </div>
             )}
           </div>
-        </div>
-      )}
+          
+          <DialogFooter>
+            {editMode ? (
+               <>
+                 <button
+                   onClick={() => setEditMode(false)}
+                   className="px-4 py-2 text-slate-700 hover:text-slate-900 transition text-sm font-medium"
+                 >
+                   Cancel
+                 </button>
+                 <button
+                   onClick={handleUpdate}
+                   disabled={!formTitle.trim() || updateMutation.isPending}
+                   className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-md transition disabled:opacity-50 flex items-center gap-2 text-sm font-medium"
+                 >
+                   {updateMutation.isPending && <Loader2 size={16} className="animate-spin" />}
+                   Save
+                 </button>
+               </>
+            ) : (
+               <>
+                 <div className="flex gap-2 mr-auto">
+                    <button
+                      onClick={() => setEditMode(true)}
+                      className="p-2 text-slate-500 hover:text-violet-600 transition"
+                      title="Edit"
+                    >
+                      <Pencil size={18} />
+                    </button>
+                    <button
+                      onClick={() => setNoteToDelete(selectedNote)}
+                      className="p-2 text-slate-500 hover:text-red-600 transition"
+                      title="Delete"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                 </div>
+                 <button
+                   onClick={closeViewModal}
+                   className="px-4 py-2 text-slate-700 hover:text-slate-900 transition text-sm font-medium"
+                 >
+                   Close
+                 </button>
+               </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        isOpen={!!noteToDelete}
+        onClose={() => setNoteToDelete(null)}
+        onConfirm={handleDelete}
+        title="Delete Note"
+        description="Are you sure you want to delete this note? This action cannot be undone."
+        confirmText="Delete"
+        variant="danger"
+      />
     </div>
   )
 }

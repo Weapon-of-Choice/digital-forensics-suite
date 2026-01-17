@@ -250,6 +250,26 @@ def get_category(db: Session, category_id: int) -> Optional[models.Category]:
     return db.query(models.Category).filter(models.Category.id == category_id).first()
 
 
+def update_category(db: Session, category_id: int, updates: schemas.CategoryCreate) -> Optional[models.Category]:
+    category = get_category(db, category_id)
+    if category:
+        category.name = updates.name
+        if updates.description:
+            category.description = updates.description
+        if updates.color:
+            category.color = updates.color
+        db.commit()
+        db.refresh(category)
+    return category
+
+
+def delete_category(db: Session, category_id: int):
+    category = get_category(db, category_id)
+    if category:
+        db.delete(category)
+        db.commit()
+
+
 def add_media_category(
     db: Session, media_id: int, category_id: int, source: str = "user", confidence: float = None
 ) -> dict:

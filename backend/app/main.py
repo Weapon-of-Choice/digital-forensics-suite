@@ -289,6 +289,20 @@ def list_categories(db: Session = Depends(get_db)):
     return crud.get_categories(db)
 
 
+@app.put("/categories/{category_id}", response_model=schemas.Category)
+def update_category(category_id: int, updates: schemas.CategoryCreate, db: Session = Depends(get_db)):
+    category = crud.update_category(db, category_id, updates)
+    if not category:
+        raise HTTPException(status_code=404, detail="Category not found")
+    return category
+
+
+@app.delete("/categories/{category_id}")
+def delete_category(category_id: int, db: Session = Depends(get_db)):
+    crud.delete_category(db, category_id)
+    return {"status": "deleted"}
+
+
 @app.post("/media/{media_id}/categories", response_model=schemas.MediaCategoryResponse)
 def add_media_category(
     media_id: int,
