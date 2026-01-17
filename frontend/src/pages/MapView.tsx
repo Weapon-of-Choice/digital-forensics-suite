@@ -26,8 +26,8 @@ export default function MapView() {
     queryFn: () => api.getMapMarkers(selectedCase) 
   })
 
-  const tileUrl = import.meta.env.VITE_TILE_SERVER_URL || 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
-  const attribution = import.meta.env.VITE_MAP_ATTRIBUTION || '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+  const tileUrl = import.meta.env.VITE_TILE_SERVER_URL || '/osm/tiles/{z}/{x}/{y}.png'
+  const attribution = import.meta.env.VITE_MAP_ATTRIBUTION || '&copy; <a href="/osm">Local OSM</a>'
 
   const center: [number, number] = markers?.length 
     ? [markers[0].lat, markers[0].lon] 
