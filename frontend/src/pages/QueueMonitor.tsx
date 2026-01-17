@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../api'
-import { Activity, Clock, CheckCircle, AlertTriangle, RefreshCw, Loader2 } from 'lucide-react'
+import { Activity, Clock, CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react'
+import { Skeleton } from '../components/ui/skeleton'
 
 export default function QueueMonitor() {
   const { data: queueStatus, isLoading, refetch } = useQuery({
@@ -26,9 +27,17 @@ export default function QueueMonitor() {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="animate-spin text-violet-600" size={32} />
-        </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <Skeleton className="h-40" />
+            <Skeleton className="h-40" />
+            <Skeleton className="h-40" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Skeleton className="h-64" />
+            <Skeleton className="h-64" />
+          </div>
+        </>
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -61,7 +70,7 @@ export default function QueueMonitor() {
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-slate-500 flex items-center gap-2">
-                    <Loader2 size={14} className="text-amber-500" />
+                    <Activity size={14} className="text-amber-500" />
                     Processing
                   </span>
                   <span className="text-amber-600 font-semibold">{mediaStatus?.processing ?? 0}</span>
