@@ -64,6 +64,13 @@ export const api = {
   searchPersons: (query: string) => fetchApi<Person[]>(`/search/autocomplete/persons?q=${encodeURIComponent(query)}`),
   searchCases: (query: string) => fetchApi<Case[]>(`/search/autocomplete/cases?q=${encodeURIComponent(query)}`),
 
+  // Geocoder (Uses external service via Nginx proxy /geocoder)
+  geocode: async (query: string) => {
+    const res = await fetch(`/geocoder/search?q=${encodeURIComponent(query)}&format=json`)
+    if (!res.ok) throw new Error('Geocoding failed')
+    return res.json()
+  },
+
   getCategories: () => fetchApi<Category[]>('/categories'),
   createCategory: (data: { name: string; description?: string; color?: string }) =>
     fetchApi<Category>('/categories', { method: 'POST', body: JSON.stringify(data) }),
@@ -266,6 +273,16 @@ export interface Media {
   gps_lon?: number
   capture_date?: string
   created_at: string
+  video_signature?: {
+    id: number
+    temporal_signature?: string
+    audio_fingerprint?: string
+    created_at: string
+  }
+  image_signature?: {
+    id: number
+    created_at: string
+  }
 }
 
 export interface Face {

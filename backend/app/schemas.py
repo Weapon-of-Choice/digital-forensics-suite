@@ -25,6 +25,49 @@ class CaseDetail(Case):
     face_count: Optional[int] = 0
 
 
+# ============ SIGNATURES ============
+
+class VideoSignature(BaseModel):
+    id: int
+    temporal_signature: Optional[str]
+    audio_fingerprint: Optional[str]
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class ImageSignature(BaseModel):
+    id: int
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+# ============ FACE ============
+
+class Face(BaseModel):
+    id: int
+    media_id: int
+    top: int
+    right: int
+    bottom: int
+    left: int
+    identity: Optional[str]
+    confidence: Optional[float]
+    thumbnail_path: Optional[str]
+    
+    class Config:
+        from_attributes = True
+
+
+class FaceMatch(BaseModel):
+    face: Face
+    distance: float
+    media_id: int
+    case_id: int
+
+
 # ============ MEDIA ============
 
 class MediaCreate(BaseModel):
@@ -58,30 +101,8 @@ class MediaDetail(Media):
     camera_model: Optional[str]
     categories: Optional[str]
     faces: List["Face"] = []
-
-
-# ============ FACE ============
-
-class Face(BaseModel):
-    id: int
-    media_id: int
-    top: int
-    right: int
-    bottom: int
-    left: int
-    identity: Optional[str]
-    confidence: Optional[float]
-    thumbnail_path: Optional[str]
-    
-    class Config:
-        from_attributes = True
-
-
-class FaceMatch(BaseModel):
-    face: Face
-    distance: float
-    media_id: int
-    case_id: int
+    video_signature: Optional[VideoSignature] = None
+    image_signature: Optional[ImageSignature] = None
 
 
 # ============ MAP ============
@@ -160,7 +181,7 @@ class VoteRequest(BaseModel):
     vote: int  # 1 or -1
 
 
-# ============ IMAGE SIGNATURE ============
+# ============ IMAGE SIGNATURE MATCH ============
 
 class SignatureMatch(BaseModel):
     media_id: int

@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api, Media, Face, Category } from '../api'
-import { Upload, Image, Users, Tag, X, MapPin, Edit2, Save, Loader2 } from 'lucide-react'
+import { Upload, Image, Users, Tag, X, MapPin, Edit2, Save, Loader2, Video, Search, FileJson } from 'lucide-react'
 import CategoryVoting from '../components/CategoryVoting'
 
 export default function CaseDetail() {
@@ -14,6 +14,8 @@ export default function CaseDetail() {
   const [editing, setEditing] = useState(false)
   const [editLat, setEditLat] = useState('')
   const [editLon, setEditLon] = useState('')
+  const [geoQuery, setGeoQuery] = useState('')
+  const [geoResults, setGeoResults] = useState<any[]>([])
 
   const { data: caseData } = useQuery({ queryKey: ['case', caseId], queryFn: () => api.getCase(caseId) })
   const { data: media } = useQuery({ queryKey: ['caseMedia', caseId], queryFn: () => api.getCaseMedia(caseId) })
@@ -22,6 +24,12 @@ export default function CaseDetail() {
   const { data: caseCategories } = useQuery({ 
     queryKey: ['caseCategories', caseId], 
     queryFn: () => api.getCaseCategories(caseId) 
+  })
+  
+  const { data: mediaCategories } = useQuery({
+    queryKey: ['mediaCategories', selectedMedia?.id],
+    queryFn: () => selectedMedia ? api.getMediaCategories(selectedMedia.id) : Promise.resolve([]),
+    enabled: !!selectedMedia
   })
 
   const updateMediaMutation = useMutation({
@@ -50,6 +58,8 @@ export default function CaseDetail() {
     setSelectedMedia(m)
     setEditLat(m.gps_lat?.toString() || '')
     setEditLon(m.gps_lon?.toString() || '')
+    setGeoQuery('')
+    setGeoResults([])
     setEditing(false)
   }
 
@@ -59,6 +69,23 @@ export default function CaseDetail() {
     const lon = editLon ? parseFloat(editLon) : undefined
     updateMediaMutation.mutate({ mediaId: selectedMedia.id, data: { gps_lat: lat, gps_lon: lon } })
     setSelectedMedia({ ...selectedMedia, gps_lat: lat, gps_lon: lon })
+  }
+
+  const handleGeocode = async () => {
+    if (!geoQuery) return
+    try {
+      const results = await api.geocode(geoQuery)
+      setGeoResults(results)
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const selectGeoResult = (lat: string, lon: string) => {
+    setEditLat(lat)
+    setEditLon(lon)
+    setGeoResults([])
+    setGeoQuery('')
   }
 
   return (
@@ -124,6 +151,9 @@ export default function CaseDetail() {
                       {m.gps_lat && (
                         <span className="text-xs bg-emerald-500/20 text-emerald-500 px-1.5 py-0.5 rounded border border-emerald-500/20">GPS</span>
                       )}
+                      {m.video_signature && (
+                        <span className="text-xs bg-blue-500/20 text-blue-500 px-1.5 py-0.5 rounded border border-blue-500/20">VSM</span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -182,6 +212,8 @@ export default function CaseDetail() {
                 alt={selectedMedia.original_filename}
                 className="max-w-full max-h-[60vh] mx-auto rounded-md border border-slate-200 shadow-sm"
               />
+              
+              {/* Geolocation Section */}
               <div className="mt-6 bg-slate-50 p-4 rounded-md border border-slate-200">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="font-medium text-slate-900 flex items-center gap-2">
@@ -208,28 +240,61 @@ export default function CaseDetail() {
                 </div>
                 
                 {editing ? (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs text-slate-500 mb-1">Latitude</label>
+                  <div className="space-y-4">
+                    <div className="flex gap-2">
                       <input
-                        type="number"
-                        step="any"
-                        value={editLat}
-                        onChange={(e) => setEditLat(e.target.value)}
-                        placeholder="e.g. 51.5074"
-                        className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm"
+                        type="text"
+                        value={geoQuery}
+                        onChange={(e) => setGeoQuery(e.target.value)}
+                        placeholder="Search address..."
+                        className="flex-1 px-3 py-2 border border-slate-300 rounded-md text-sm"
+                        onKeyDown={(e) => e.key === 'Enter' && handleGeocode()}
                       />
+                      <button 
+                        onClick={handleGeocode}
+                        className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded-md"
+                      >
+                        <Search size={16} />
+                      </button>
                     </div>
-                    <div>
-                      <label className="block text-xs text-slate-500 mb-1">Longitude</label>
-                      <input
-                        type="number"
-                        step="any"
-                        value={editLon}
-                        onChange={(e) => setEditLon(e.target.value)}
-                        placeholder="e.g. -0.1278"
-                        className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm"
-                      />
+                    
+                    {geoResults.length > 0 && (
+                      <ul className="bg-white border border-slate-200 rounded-md max-h-40 overflow-y-auto text-sm">
+                        {geoResults.map((res, idx) => (
+                          <li 
+                            key={idx} 
+                            className="px-3 py-2 hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-0"
+                            onClick={() => selectGeoResult(res.lat, res.lon)}
+                          >
+                            {res.display_name}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs text-slate-500 mb-1">Latitude</label>
+                        <input
+                          type="number"
+                          step="any"
+                          value={editLat}
+                          onChange={(e) => setEditLat(e.target.value)}
+                          placeholder="e.g. 51.5074"
+                          className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-500 mb-1">Longitude</label>
+                        <input
+                          type="number"
+                          step="any"
+                          value={editLon}
+                          onChange={(e) => setEditLon(e.target.value)}
+                          placeholder="e.g. -0.1278"
+                          className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm"
+                        />
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -246,7 +311,55 @@ export default function CaseDetail() {
                 )}
               </div>
               
-              <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+              {/* Media Categories */}
+              <div className="mt-6 border-t border-slate-200 pt-4">
+                <h4 className="font-medium text-slate-900 mb-2 flex items-center gap-2">
+                  <Tag size={16} /> Categories
+                </h4>
+                <CategoryVoting
+                  type="media"
+                  targetId={selectedMedia.id}
+                  categories={mediaCategories || []}
+                  allCategories={categories || []}
+                  onRefresh={() => queryClient.invalidateQueries({ queryKey: ['mediaCategories', selectedMedia.id] })}
+                />
+              </div>
+
+              {/* Signatures & Analysis */}
+              {(selectedMedia.video_signature || selectedMedia.image_signature) && (
+                <div className="mt-6 border-t border-slate-200 pt-4">
+                  <h4 className="font-medium text-slate-900 mb-3 flex items-center gap-2">
+                    <FileJson size={16} /> Analysis Data
+                  </h4>
+                  <div className="space-y-3">
+                    {selectedMedia.video_signature && (
+                      <div className="bg-slate-50 p-3 rounded border border-slate-100 text-sm">
+                        <p className="font-semibold text-violet-700 flex items-center gap-1 mb-1">
+                          <Video size={14} /> Video Signature (VSM)
+                        </p>
+                        <p className="font-mono text-xs text-slate-600 break-all">
+                          Temporal: {selectedMedia.video_signature.temporal_signature || 'N/A'}
+                        </p>
+                        {selectedMedia.video_signature.audio_fingerprint && (
+                          <p className="font-mono text-xs text-slate-600 mt-1 break-all">
+                            Audio: {selectedMedia.video_signature.audio_fingerprint.substring(0, 32)}...
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    {selectedMedia.image_signature && (
+                      <div className="bg-slate-50 p-3 rounded border border-slate-100 text-sm">
+                        <p className="font-semibold text-emerald-700 flex items-center gap-1 mb-1">
+                          <Image size={14} /> Image Signature
+                        </p>
+                        <p className="text-xs text-slate-500">ORB Descriptors & Color Histogram extracted.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              <div className="mt-4 pt-4 border-t border-slate-200 grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-slate-500 mb-1">Status</p>
                   <p className="text-slate-900 font-medium capitalize">{selectedMedia.status}</p>
