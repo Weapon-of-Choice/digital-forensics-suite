@@ -2,8 +2,9 @@ import { useState, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api, Media, Face, Category } from '../api'
-import { Upload, Image, Users, Tag, X, MapPin, Edit2, Save, Loader2, Video, Search, FileJson, UserCheck } from 'lucide-react'
+import { Upload, Image, Users, Tag, MapPin, Edit2, Save, Loader2, Video, Search, FileJson, UserCheck } from 'lucide-react'
 import CategoryVoting from '../components/CategoryVoting'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog'
 
 export default function CaseDetail() {
   const { id } = useParams<{ id: string }>()
@@ -258,260 +259,253 @@ export default function CaseDetail() {
       </div>
 
       {/* Media Modal */}
-      {selectedMedia && (
-        <div className="fixed inset-0 bg-slate-600/80 backdrop-blur-sm flex items-center justify-center z-50 p-8">
-          <div className="bg-white border border-slate-200 rounded-lg max-w-4xl w-full max-h-full overflow-auto shadow-2xl">
-            <div className="flex items-center justify-between p-4 border-b border-slate-200">
-              <h3 className="font-semibold text-slate-900">{selectedMedia.original_filename}</h3>
-              <button onClick={() => setSelectedMedia(null)} className="text-slate-500 hover:text-slate-900 transition">
-                <X size={24} />
-              </button>
-            </div>
-            <div className="p-4">
-              {selectedMedia.mime_type?.startsWith('video/') ? (
-                <video
-                  src={api.getMediaFile(selectedMedia.id)}
-                  controls
-                  className="max-w-full max-h-[60vh] mx-auto rounded-md border border-slate-200 shadow-sm"
-                />
-              ) : (
-                <img
-                  src={api.getMediaFile(selectedMedia.id)}
-                  alt={selectedMedia.original_filename}
-                  className="max-w-full max-h-[60vh] mx-auto rounded-md border border-slate-200 shadow-sm"
-                />
-              )}
-              
-              {/* Geolocation Section */}
-              <div className="mt-6 bg-slate-50 p-4 rounded-md border border-slate-200">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="font-medium text-slate-900 flex items-center gap-2">
-                    <MapPin size={16} />
-                    Location Data
-                  </h4>
-                  {!editing ? (
-                    <button
-                      onClick={() => setEditing(true)}
-                      className="text-sm text-violet-600 hover:text-violet-700 flex items-center gap-1"
-                    >
-                      <Edit2 size={14} /> Edit
-                    </button>
+      <Dialog open={!!selectedMedia} onOpenChange={(open) => !open && setSelectedMedia(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+          {selectedMedia && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{selectedMedia.original_filename}</DialogTitle>
+              </DialogHeader>
+              <div className="mt-4">
+                {selectedMedia.mime_type?.startsWith('video/') ? (
+                  <video
+                    src={api.getMediaFile(selectedMedia.id)}
+                    controls
+                    className="max-w-full max-h-[60vh] mx-auto rounded-md border border-slate-200 shadow-sm"
+                  />
+                ) : (
+                  <img
+                    src={api.getMediaFile(selectedMedia.id)}
+                    alt={selectedMedia.original_filename}
+                    className="max-w-full max-h-[60vh] mx-auto rounded-md border border-slate-200 shadow-sm"
+                  />
+                )}
+                
+                {/* Geolocation Section */}
+                <div className="mt-6 bg-slate-50 p-4 rounded-md border border-slate-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-medium text-slate-900 flex items-center gap-2">
+                      <MapPin size={16} />
+                      Location Data
+                    </h4>
+                    {!editing ? (
+                      <button
+                        onClick={() => setEditing(true)}
+                        className="text-sm text-violet-600 hover:text-violet-700 flex items-center gap-1"
+                      >
+                        <Edit2 size={14} /> Edit
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleSaveLocation}
+                        disabled={updateMediaMutation.isPending}
+                        className="text-sm bg-violet-600 text-white px-3 py-1 rounded flex items-center gap-1 hover:bg-violet-700 disabled:opacity-50"
+                      >
+                        {updateMediaMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                        Save
+                      </button>
+                    )}
+                  </div>
+                  
+                  {editing ? (
+                    <div className="space-y-4">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={geoQuery}
+                          onChange={(e) => setGeoQuery(e.target.value)}
+                          placeholder="Search address..."
+                          className="flex-1 px-3 py-2 border border-slate-300 rounded-md text-sm"
+                          onKeyDown={(e) => e.key === 'Enter' && handleGeocode()}
+                        />
+                        <button 
+                          onClick={handleGeocode}
+                          className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded-md"
+                        >
+                          <Search size={16} />
+                        </button>
+                      </div>
+                      
+                      {geoResults.length > 0 && (
+                        <ul className="bg-white border border-slate-200 rounded-md max-h-40 overflow-y-auto text-sm">
+                          {geoResults.map((res, idx) => (
+                            <li 
+                              key={idx} 
+                              className="px-3 py-2 hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-0"
+                              onClick={() => selectGeoResult(res.lat, res.lon)}
+                            >
+                              {res.display_name}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs text-slate-500 mb-1">Latitude</label>
+                          <input
+                            type="number"
+                            step="any"
+                            value={editLat}
+                            onChange={(e) => setEditLat(e.target.value)}
+                            placeholder="e.g. 51.5074"
+                            className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-slate-500 mb-1">Longitude</label>
+                          <input
+                            type="number"
+                            step="any"
+                            value={editLon}
+                            onChange={(e) => setEditLon(e.target.value)}
+                            placeholder="e.g. -0.1278"
+                            className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm"
+                          />
+                        </div>
+                      </div>
+                    </div>
                   ) : (
-                    <button
-                      onClick={handleSaveLocation}
-                      disabled={updateMediaMutation.isPending}
-                      className="text-sm bg-violet-600 text-white px-3 py-1 rounded flex items-center gap-1 hover:bg-violet-700 disabled:opacity-50"
-                    >
-                      {updateMediaMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                      Save
-                    </button>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-slate-500 mb-1">Latitude</p>
+                        <p className="text-slate-900 font-mono">{selectedMedia.gps_lat?.toFixed(6) || 'Not set'}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-500 mb-1">Longitude</p>
+                        <p className="text-slate-900 font-mono">{selectedMedia.gps_lon?.toFixed(6) || 'Not set'}</p>
+                      </div>
+                    </div>
                   )}
                 </div>
                 
-                {editing ? (
-                  <div className="space-y-4">
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={geoQuery}
-                        onChange={(e) => setGeoQuery(e.target.value)}
-                        placeholder="Search address..."
-                        className="flex-1 px-3 py-2 border border-slate-300 rounded-md text-sm"
-                        onKeyDown={(e) => e.key === 'Enter' && handleGeocode()}
-                      />
-                      <button 
-                        onClick={handleGeocode}
-                        className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded-md"
-                      >
-                        <Search size={16} />
-                      </button>
-                    </div>
-                    
-                    {geoResults.length > 0 && (
-                      <ul className="bg-white border border-slate-200 rounded-md max-h-40 overflow-y-auto text-sm">
-                        {geoResults.map((res, idx) => (
-                          <li 
-                            key={idx} 
-                            className="px-3 py-2 hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-0"
-                            onClick={() => selectGeoResult(res.lat, res.lon)}
-                          >
-                            {res.display_name}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs text-slate-500 mb-1">Latitude</label>
-                        <input
-                          type="number"
-                          step="any"
-                          value={editLat}
-                          onChange={(e) => setEditLat(e.target.value)}
-                          placeholder="e.g. 51.5074"
-                          className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-slate-500 mb-1">Longitude</label>
-                        <input
-                          type="number"
-                          step="any"
-                          value={editLon}
-                          onChange={(e) => setEditLon(e.target.value)}
-                          placeholder="e.g. -0.1278"
-                          className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-slate-500 mb-1">Latitude</p>
-                      <p className="text-slate-900 font-mono">{selectedMedia.gps_lat?.toFixed(6) || 'Not set'}</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-500 mb-1">Longitude</p>
-                      <p className="text-slate-900 font-mono">{selectedMedia.gps_lon?.toFixed(6) || 'Not set'}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-              
-              {/* Media Categories */}
-              <div className="mt-6 border-t border-slate-200 pt-4">
-                <h4 className="font-medium text-slate-900 mb-2 flex items-center gap-2">
-                  <Tag size={16} /> Categories
-                </h4>
-                <CategoryVoting
-                  type="media"
-                  targetId={selectedMedia.id}
-                  categories={mediaCategories || []}
-                  allCategories={categories || []}
-                  onRefresh={() => queryClient.invalidateQueries({ queryKey: ['mediaCategories', selectedMedia.id] })}
-                />
-              </div>
-
-              {/* Signatures & Analysis */}
-              {(selectedMedia.video_signature || selectedMedia.image_signature) && (
+                {/* Media Categories */}
                 <div className="mt-6 border-t border-slate-200 pt-4">
-                  <h4 className="font-medium text-slate-900 mb-3 flex items-center gap-2">
-                    <FileJson size={16} /> Analysis Data
+                  <h4 className="font-medium text-slate-900 mb-2 flex items-center gap-2">
+                    <Tag size={16} /> Categories
                   </h4>
-                  <div className="space-y-3">
-                    {selectedMedia.video_signature && (
-                      <div className="bg-slate-50 p-3 rounded border border-slate-100 text-sm">
-                        <p className="font-semibold text-violet-700 flex items-center gap-1 mb-1">
-                          <Video size={14} /> Video Signature (VSM)
-                        </p>
-                        <p className="font-mono text-xs text-slate-600 break-all">
-                          Temporal: {selectedMedia.video_signature.temporal_signature || 'N/A'}
-                        </p>
-                        {selectedMedia.video_signature.audio_fingerprint && (
-                          <p className="font-mono text-xs text-slate-600 mt-1 break-all">
-                            Audio: {selectedMedia.video_signature.audio_fingerprint.substring(0, 32)}...
+                  <CategoryVoting
+                    type="media"
+                    targetId={selectedMedia.id}
+                    categories={mediaCategories || []}
+                    allCategories={categories || []}
+                    onRefresh={() => queryClient.invalidateQueries({ queryKey: ['mediaCategories', selectedMedia.id] })}
+                  />
+                </div>
+
+                {/* Signatures & Analysis */}
+                {(selectedMedia.video_signature || selectedMedia.image_signature) && (
+                  <div className="mt-6 border-t border-slate-200 pt-4">
+                    <h4 className="font-medium text-slate-900 mb-3 flex items-center gap-2">
+                      <FileJson size={16} /> Analysis Data
+                    </h4>
+                    <div className="space-y-3">
+                      {selectedMedia.video_signature && (
+                        <div className="bg-slate-50 p-3 rounded border border-slate-100 text-sm">
+                          <p className="font-semibold text-violet-700 flex items-center gap-1 mb-1">
+                            <Video size={14} /> Video Signature (VSM)
                           </p>
-                        )}
-                      </div>
-                    )}
-                    {selectedMedia.image_signature && (
-                      <div className="bg-slate-50 p-3 rounded border border-slate-100 text-sm">
-                        <p className="font-semibold text-emerald-700 flex items-center gap-1 mb-1">
-                          <Image size={14} /> Image Signature
-                        </p>
-                        <p className="text-xs text-slate-500">ORB Descriptors & Colour Histogram extracted.</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-              
-              <div className="mt-4 pt-4 border-t border-slate-200 grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-slate-500 mb-1">Status</p>
-                  <p className="text-slate-900 font-medium capitalize">{selectedMedia.status}</p>
-                </div>
-                <div>
-                  <p className="text-slate-500 mb-1">Size</p>
-                  <p className="text-slate-900 font-medium">{(selectedMedia.file_size / 1024).toFixed(1)} KB</p>
-                </div>
-                {selectedMedia.capture_date && (
-                  <div>
-                    <p className="text-slate-500 mb-1">Capture Date</p>
-                    <p className="text-slate-900 font-medium">{new Date(selectedMedia.capture_date).toLocaleString()}</p>
+                          <p className="font-mono text-xs text-slate-600 break-all">
+                            Temporal: {selectedMedia.video_signature.temporal_signature || 'N/A'}
+                          </p>
+                          {selectedMedia.video_signature.audio_fingerprint && (
+                            <p className="font-mono text-xs text-slate-600 mt-1 break-all">
+                              Audio: {selectedMedia.video_signature.audio_fingerprint.substring(0, 32)}...
+                            </p>
+                          )}
+                        </div>
+                      )}
+                      {selectedMedia.image_signature && (
+                        <div className="bg-slate-50 p-3 rounded border border-slate-100 text-sm">
+                          <p className="font-semibold text-emerald-700 flex items-center gap-1 mb-1">
+                            <Image size={14} /> Image Signature
+                          </p>
+                          <p className="text-xs text-slate-500">ORB Descriptors & Colour Histogram extracted.</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
+                
+                <div className="mt-4 pt-4 border-t border-slate-200 grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-slate-500 mb-1">Status</p>
+                    <p className="text-slate-900 font-medium capitalize">{selectedMedia.status}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 mb-1">Size</p>
+                    <p className="text-slate-900 font-medium">{(selectedMedia.file_size / 1024).toFixed(1)} KB</p>
+                  </div>
+                  {selectedMedia.capture_date && (
+                    <div>
+                      <p className="text-slate-500 mb-1">Capture Date</p>
+                      <p className="text-slate-900 font-medium">{new Date(selectedMedia.capture_date).toLocaleString()}</p>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Edit Case Modal */}
-      {showEditCaseModal && (
-        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg">
-            <div className="flex items-center justify-between p-4 border-b border-slate-200">
-              <h2 className="text-lg font-semibold text-slate-900">Edit Case</h2>
-              <button onClick={() => setShowEditCaseModal(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+      <Dialog open={showEditCaseModal} onOpenChange={setShowEditCaseModal}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Edit Case</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Name *</label>
+              <input type="text" value={editCaseName} onChange={(e) => setEditCaseName(e.target.value)} className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-900" />
             </div>
-            <div className="p-4 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Name *</label>
-                <input type="text" value={editCaseName} onChange={(e) => setEditCaseName(e.target.value)} className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-900" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
-                <textarea value={editCaseDesc} onChange={(e) => setEditCaseDesc(e.target.value)} rows={3} className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-900 resize-none" />
-              </div>
-            </div>
-            <div className="flex justify-end gap-3 p-4 border-t border-slate-200 bg-slate-50">
-              <button onClick={() => setShowEditCaseModal(false)} className="px-4 py-2 text-slate-700 hover:text-slate-900 transition">Cancel</button>
-              <button onClick={handleSaveCase} disabled={!editCaseName.trim() || updateCaseMutation.isPending} className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-md transition disabled:opacity-50 flex items-center gap-2">
-                {updateCaseMutation.isPending && <Loader2 size={16} className="animate-spin" />} Save
-              </button>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+              <textarea value={editCaseDesc} onChange={(e) => setEditCaseDesc(e.target.value)} rows={3} className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-900 resize-none" />
             </div>
           </div>
-        </div>
-      )}
+          <DialogFooter>
+            <button onClick={() => setShowEditCaseModal(false)} className="px-4 py-2 text-slate-700 hover:text-slate-900 transition text-sm font-medium">Cancel</button>
+            <button onClick={handleSaveCase} disabled={!editCaseName.trim() || updateCaseMutation.isPending} className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-md transition disabled:opacity-50 flex items-center gap-2 text-sm font-medium">
+              {updateCaseMutation.isPending && <Loader2 size={16} className="animate-spin" />} Save
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Identify Face Modal */}
-      {showIdentifyModal && selectedFace && (
-        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-sm">
-            <div className="flex items-center justify-between p-4 border-b border-slate-200">
-              <h2 className="text-lg font-semibold text-slate-900">Identify Face</h2>
-              <button onClick={() => setShowIdentifyModal(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+      <Dialog open={showIdentifyModal} onOpenChange={setShowIdentifyModal}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Identify Face</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="flex justify-center">
+              {selectedFace?.thumbnail_path && (
+                <img src={`http://localhost:8000${selectedFace.thumbnail_path}`} className="w-24 h-24 rounded-lg object-cover bg-slate-200" alt="Face" />
+              )}
             </div>
-            <div className="p-4 space-y-4">
-              <div className="flex justify-center">
-                {selectedFace.thumbnail_path && (
-                  <img src={`http://localhost:8000${selectedFace.thumbnail_path}`} className="w-24 h-24 rounded-lg object-cover bg-slate-200" alt="Face" />
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Person Name *</label>
-                <input 
-                  type="text" 
-                  value={identifyName} 
-                  onChange={(e) => setIdentifyName(e.target.value)} 
-                  placeholder="Enter name..." 
-                  className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-900" 
-                  autoFocus
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-3 p-4 border-t border-slate-200 bg-slate-50">
-              <button onClick={() => setShowIdentifyModal(false)} className="px-4 py-2 text-slate-700 hover:text-slate-900 transition">Cancel</button>
-              <button onClick={handleIdentify} disabled={!identifyName.trim() || identifyFaceMutation.isPending} className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-md transition disabled:opacity-50 flex items-center gap-2">
-                {identifyFaceMutation.isPending && <Loader2 size={16} className="animate-spin" />} Identify
-              </button>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Person Name *</label>
+              <input 
+                type="text" 
+                value={identifyName} 
+                onChange={(e) => setIdentifyName(e.target.value)} 
+                placeholder="Enter name..." 
+                className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-900" 
+                autoFocus
+              />
             </div>
           </div>
-        </div>
-      )}
+          <DialogFooter>
+            <button onClick={() => setShowIdentifyModal(false)} className="px-4 py-2 text-slate-700 hover:text-slate-900 transition text-sm font-medium">Cancel</button>
+            <button onClick={handleIdentify} disabled={!identifyName.trim() || identifyFaceMutation.isPending} className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-md transition disabled:opacity-50 flex items-center gap-2 text-sm font-medium">
+              {identifyFaceMutation.isPending && <Loader2 size={16} className="animate-spin" />} Identify
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
