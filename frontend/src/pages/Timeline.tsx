@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Filter, Calendar, FileText, Image as ImageIcon, MapPin, Search, AlertTriangle, User, Clock } from 'lucide-react'
+import { Filter, Calendar, FileText, Image as ImageIcon, MapPin, Search, AlertTriangle, User, Clock, Loader2 } from 'lucide-react'
 import { api, TimelineEvent, Case } from '../api'
 import { formatDistanceToNow } from 'date-fns'
 
@@ -56,7 +56,16 @@ export default function Timeline() {
     }
   }
 
-  if (loading) return <div className="p-8 text-slate-500">Loading timeline...</div>
+  const safeDate = (dateStr?: string) => {
+    if (!dateStr) return 'Unknown date'
+    try {
+      return formatDistanceToNow(new Date(dateStr), { addSuffix: true })
+    } catch {
+      return 'Unknown date'
+    }
+  }
+
+  if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-slate-900" /></div>
   if (error) return <div className="p-8 text-red-600">{error}</div>
 
   return (
@@ -93,7 +102,7 @@ export default function Timeline() {
                     )}
                   </div>
                   <span className="text-xs text-slate-500 whitespace-nowrap ml-2">
-                    {event.event_date ? formatDistanceToNow(new Date(event.event_date), { addSuffix: true }) : 'Unknown date'}
+                    {safeDate(event.event_date || event.created_at)}
                   </span>
                 </div>
                 <p className="text-sm text-slate-600 mb-2">{event.description}</p>

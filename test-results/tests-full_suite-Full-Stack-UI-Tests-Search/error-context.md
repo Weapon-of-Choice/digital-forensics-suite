@@ -1,213 +1,234 @@
 # Page snapshot
 
 ```yaml
-- generic [ref=e3]:
-  - navigation [ref=e4]:
-    - generic [ref=e6]:
-      - img [ref=e8]
-      - generic [ref=e10]:
-        - heading "Forensic Analysis" [level=1] [ref=e11]
-        - paragraph [ref=e12]: Investigation Platform
-    - list [ref=e13]:
-      - listitem [ref=e14]:
-        - link "Dashboard" [ref=e15] [cursor=pointer]:
-          - /url: /
-          - img [ref=e16]
-          - text: Dashboard
-      - listitem [ref=e19]:
-        - link "Cases" [ref=e20] [cursor=pointer]:
-          - /url: /cases
-          - img [ref=e21]
-          - text: Cases
-      - listitem [ref=e23]:
-        - link "Map" [ref=e24] [cursor=pointer]:
-          - /url: /map
-          - img [ref=e25]
-          - text: Map
-      - listitem [ref=e27]:
-        - link "Timeline" [ref=e28] [cursor=pointer]:
-          - /url: /timeline
-          - img [ref=e29]
-          - text: Timeline
-      - listitem [ref=e32]:
-        - link "Notes" [ref=e33] [cursor=pointer]:
-          - /url: /notes
-          - img [ref=e34]
-          - text: Notes
-      - listitem [ref=e37]:
-        - link "Tasks" [ref=e38] [cursor=pointer]:
-          - /url: /tasks
-          - img [ref=e39]
-          - text: Tasks
-      - listitem [ref=e42]:
-        - link "Watchlists" [ref=e43] [cursor=pointer]:
-          - /url: /watchlists
-          - img [ref=e44]
-          - text: Watchlists
-      - listitem [ref=e46]:
-        - link "Alerts" [ref=e47] [cursor=pointer]:
-          - /url: /alerts
-          - img [ref=e48]
-          - text: Alerts
-      - listitem [ref=e51]:
-        - link "Persons" [ref=e52] [cursor=pointer]:
-          - /url: /persons
-          - img [ref=e53]
-          - text: Persons
-      - listitem [ref=e58]:
-        - link "Queue" [ref=e59] [cursor=pointer]:
-          - /url: /queue
-          - img [ref=e60]
-          - text: Queue
-    - generic [ref=e63]:
-      - generic [ref=e64]:
-        - paragraph
-        - paragraph
-        - generic [ref=e65]: Admin
-      - button "Sign out" [ref=e66] [cursor=pointer]:
-        - img [ref=e67]
-        - text: Sign out
-  - generic [ref=e70]:
-    - banner [ref=e71]:
-      - button "Search..." [ref=e72] [cursor=pointer]:
-        - img [ref=e73]
-        - generic [ref=e76]: Search...
-      - generic [ref=e78]:
-        - generic [ref=e79]:
-          - paragraph
-          - paragraph [ref=e80]: Administrator
-        - img [ref=e82]
-        - button "Sign out" [ref=e85] [cursor=pointer]:
-          - img [ref=e86]
-    - main [ref=e89]:
-      - generic [ref=e90]:
-        - generic [ref=e92]:
-          - generic [ref=e93]:
-            - generic [ref=e94]:
-              - img [ref=e96]
-              - generic [ref=e98]: Forensic Platform
-            - heading "Advanced Media Analysis for Investigations" [level=2] [ref=e99]
-            - paragraph [ref=e100]: Process digital evidence with AI-powered face recognition, geolocation mapping, and intelligent categorization.
-            - generic [ref=e101]:
-              - link "Create New Case" [ref=e102] [cursor=pointer]:
-                - /url: /cases
-              - link "Search Media" [ref=e103] [cursor=pointer]:
-                - /url: /search
-                - text: Search Media
-                - img [ref=e104]
-          - generic [ref=e106]:
-            - generic [ref=e107]:
-              - generic [ref=e108]: AI
-              - generic [ref=e109]: Analysis
-            - generic [ref=e110]:
-              - generic [ref=e111]: GPS
-              - generic [ref=e112]: Mapping
-            - generic [ref=e113]:
-              - generic [ref=e114]: Face
-              - generic [ref=e115]: Recognition
-            - generic [ref=e116]:
-              - generic [ref=e117]: Hash
-              - generic [ref=e118]: Signatures
-        - generic [ref=e119]:
-          - generic [ref=e120]:
-            - img [ref=e122]
-            - generic [ref=e124]:
-              - paragraph [ref=e125]: Total Cases
-              - paragraph [ref=e126]: "9"
-          - generic [ref=e127]:
-            - img [ref=e129]
-            - generic [ref=e133]:
-              - paragraph [ref=e134]: Total Media
-              - paragraph [ref=e135]: "5"
-          - generic [ref=e136]:
-            - img [ref=e138]
-            - generic [ref=e141]:
-              - paragraph [ref=e142]: GPS Locations
-              - paragraph [ref=e143]: "3"
-          - generic [ref=e144]:
-            - img [ref=e146]
-            - generic [ref=e151]:
-              - paragraph [ref=e152]: Faces Detected
-              - paragraph [ref=e153]: "0"
-        - generic [ref=e154]:
-          - generic [ref=e155]:
-            - generic [ref=e156]:
-              - heading "Processing Status" [level=2] [ref=e157]
-              - link "View Queue →" [ref=e158] [cursor=pointer]:
-                - /url: /queue
-            - generic [ref=e159]:
-              - generic [ref=e160]:
-                - img [ref=e161]
-                - generic [ref=e163]: "Processing:"
-                - generic [ref=e164]: "0"
-              - generic [ref=e165]:
-                - img [ref=e166]
-                - generic [ref=e169]: "Completed:"
-                - generic [ref=e170]: "5"
-              - generic [ref=e171]:
-                - img [ref=e172]
-                - generic [ref=e174]: "Failed:"
-                - generic [ref=e175]: "0"
-          - generic [ref=e176]:
-            - heading "Quick Actions" [level=2] [ref=e177]
-            - generic [ref=e178]:
-              - link "New Case" [ref=e179] [cursor=pointer]:
-                - /url: /cases
-              - link "View Map" [ref=e180] [cursor=pointer]:
-                - /url: /map
-              - link "Search Media" [ref=e181] [cursor=pointer]:
-                - /url: /search
-        - generic [ref=e182]:
-          - generic [ref=e183]:
-            - img [ref=e184]
-            - heading "Service Health" [level=2] [ref=e187]
-          - generic [ref=e188]:
-            - generic [ref=e189]:
-              - img [ref=e190]
-              - generic [ref=e193]: face-service
-            - generic [ref=e194]:
-              - img [ref=e195]
-              - generic [ref=e198]: hash-service
-            - generic [ref=e199]:
-              - img [ref=e200]
-              - generic [ref=e203]: ai-categorizer
-            - generic [ref=e204]:
-              - img [ref=e205]
-              - generic [ref=e208]: geocoder
-            - generic [ref=e209]:
-              - img [ref=e210]
-              - generic [ref=e213]: vsm-service
-        - generic [ref=e214]:
-          - heading "Recent Cases" [level=2] [ref=e215]
-          - generic [ref=e216]:
-            - link "Real Data Case Real images from Unsplash 1/17/2026" [ref=e217] [cursor=pointer]:
-              - /url: /cases/8
-              - generic [ref=e218]:
-                - paragraph [ref=e219]: Real Data Case
-                - paragraph [ref=e220]: Real images from Unsplash
-              - generic [ref=e221]: 1/17/2026
-            - link "Auto Case 1768633716779 No description 1/17/2026" [ref=e222] [cursor=pointer]:
-              - /url: /cases/9
-              - generic [ref=e223]:
-                - paragraph [ref=e224]: Auto Case 1768633716779
-                - paragraph [ref=e225]: No description
-              - generic [ref=e226]: 1/17/2026
-            - link "Auto Case 1768633889513 No description 1/17/2026" [ref=e227] [cursor=pointer]:
-              - /url: /cases/10
-              - generic [ref=e228]:
-                - paragraph [ref=e229]: Auto Case 1768633889513
-                - paragraph [ref=e230]: No description
-              - generic [ref=e231]: 1/17/2026
-            - link "Auto Case 1768634353943 No description 1/17/2026" [ref=e232] [cursor=pointer]:
-              - /url: /cases/11
-              - generic [ref=e233]:
-                - paragraph [ref=e234]: Auto Case 1768634353943
-                - paragraph [ref=e235]: No description
-              - generic [ref=e236]: 1/17/2026
-            - link "Auto Case 1768634715608 No description 1/17/2026" [ref=e237] [cursor=pointer]:
-              - /url: /cases/12
-              - generic [ref=e238]:
-                - paragraph [ref=e239]: Auto Case 1768634715608
-                - paragraph [ref=e240]: No description
-              - generic [ref=e241]: 1/17/2026
+- generic [active]:
+  - generic:
+    - generic:
+      - navigation:
+        - generic:
+          - generic:
+            - generic:
+              - img
+            - generic:
+              - heading [level=1]: Forensic Analysis
+              - paragraph: Investigation Platform
+        - list:
+          - listitem:
+            - link:
+              - /url: /
+              - img
+              - text: Dashboard
+          - listitem:
+            - link:
+              - /url: /cases
+              - img
+              - text: Cases
+          - listitem:
+            - link:
+              - /url: /map
+              - img
+              - text: Map
+          - listitem:
+            - link:
+              - /url: /timeline
+              - img
+              - text: Timeline
+          - listitem:
+            - link:
+              - /url: /notes
+              - img
+              - text: Notes
+          - listitem:
+            - link:
+              - /url: /tasks
+              - img
+              - text: Tasks
+          - listitem:
+            - link:
+              - /url: /watchlists
+              - img
+              - text: Watchlists
+          - listitem:
+            - link:
+              - /url: /alerts
+              - img
+              - text: Alerts
+          - listitem:
+            - link:
+              - /url: /persons
+              - img
+              - text: Persons
+          - listitem:
+            - link:
+              - /url: /queue
+              - img
+              - text: Queue
+        - generic:
+          - generic:
+            - generic:
+              - generic: Admin
+            - button:
+              - img
+              - text: Sign out
+      - generic:
+        - banner:
+          - button:
+            - img
+            - generic: Search...
+        - main:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - img
+                    - generic: Forensic Platform
+                  - heading [level=2]: Advanced Media Analysis for Investigations
+                  - paragraph: Process digital evidence with AI-powered face recognition, geolocation mapping, and intelligent categorization.
+                  - generic:
+                    - link:
+                      - /url: /cases
+                      - text: Create New Case
+                    - link:
+                      - /url: /search
+                      - text: Search Media
+                      - img
+                - generic:
+                  - generic:
+                    - generic: AI
+                    - generic: Analysis
+                  - generic:
+                    - generic: GPS
+                    - generic: Mapping
+                  - generic:
+                    - generic: Face
+                    - generic: Recognition
+                  - generic:
+                    - generic: Hash
+                    - generic: Signatures
+            - generic:
+              - generic:
+                - generic:
+                  - img
+                - generic:
+                  - paragraph: Total Cases
+                  - paragraph: "2"
+              - generic:
+                - generic:
+                  - img
+                - generic:
+                  - paragraph: Total Media
+                  - paragraph: "1"
+              - generic:
+                - generic:
+                  - img
+                - generic:
+                  - paragraph: GPS Locations
+                  - paragraph: "0"
+              - generic:
+                - generic:
+                  - img
+                - generic:
+                  - paragraph: Faces Detected
+                  - paragraph: "0"
+            - generic:
+              - generic:
+                - generic:
+                  - heading [level=2]: Processing Status
+                  - link:
+                    - /url: /queue
+                    - text: View Queue →
+                - generic:
+                  - generic:
+                    - img
+                    - generic: "Processing:"
+                    - generic: "0"
+                  - generic:
+                    - img
+                    - generic: "Completed:"
+                    - generic: "1"
+                  - generic:
+                    - img
+                    - generic: "Failed:"
+                    - generic: "0"
+              - generic:
+                - heading [level=2]: Quick Actions
+                - generic:
+                  - link:
+                    - /url: /cases
+                    - text: New Case
+                  - link:
+                    - /url: /map
+                    - text: View Map
+                  - link:
+                    - /url: /search
+                    - text: Search Media
+            - generic:
+              - generic:
+                - img
+                - heading [level=2]: Service Health
+              - generic:
+                - generic:
+                  - img
+                  - generic: face-service
+                - generic:
+                  - img
+                  - generic: hash-service
+                - generic:
+                  - img
+                  - generic: ai-categorizer
+                - generic:
+                  - img
+                  - generic: geocoder
+                - generic:
+                  - img
+                  - generic: vsm-service
+            - generic:
+              - heading [level=2]: Recent Cases
+              - generic:
+                - link:
+                  - /url: /cases/17
+                  - generic:
+                    - paragraph: Auto Case 1768666844005
+                    - paragraph: No description
+                  - generic: 1/17/2026
+                - link:
+                  - /url: /cases/18
+                  - generic:
+                    - paragraph: Auto Case 1768685025463
+                    - paragraph: No description
+                  - generic: 1/17/2026
+  - dialog [ref=e2]:
+    - generic [ref=e3]:
+      - heading "Search" [level=2] [ref=e4]
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e7]:
+            - button "Text Search" [ref=e8] [cursor=pointer]:
+              - img [ref=e9]
+              - text: Text Search
+            - button "Image Upload" [ref=e11] [cursor=pointer]:
+              - img [ref=e12]
+              - text: Image Upload
+            - button "Media ID" [ref=e15] [cursor=pointer]:
+              - img [ref=e16]
+              - text: Media ID
+            - button "Signature" [ref=e20] [cursor=pointer]:
+              - img [ref=e21]
+              - text: Signature
+            - button "Location" [ref=e30] [cursor=pointer]:
+              - img [ref=e31]
+              - text: Location
+          - generic [ref=e34]:
+            - textbox "Search cases, persons, media..." [ref=e35]: Real Data
+            - button "Search" [ref=e36] [cursor=pointer]:
+              - img [ref=e37]
+              - text: Search
+        - generic [ref=e40]:
+          - heading "Results (0)" [level=2] [ref=e41]
+          - paragraph [ref=e42]: No matches found.
+    - button "Close" [ref=e43] [cursor=pointer]:
+      - img [ref=e44]
+      - generic [ref=e47]: Close
 ```

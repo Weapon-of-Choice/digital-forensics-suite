@@ -7,6 +7,7 @@ import os
 import uuid
 import io
 
+from datetime import datetime
 from .database import get_db, engine
 from . import models, schemas, crud
 from .auth import get_current_user, require_auth, require_admin, require_analyst, CurrentUser
@@ -64,7 +65,8 @@ def create_case(case: schemas.CaseCreate, db: Session = Depends(get_db)):
     crud.create_timeline_event(db, db_case.id, schemas.TimelineEventCreate(
         event_type="case_created",
         title=f"Case Created: {db_case.name}",
-        description=db_case.description
+        description=db_case.description,
+        event_date=datetime.utcnow()
     ))
     return db_case
 
@@ -137,7 +139,8 @@ async def upload_media(
     crud.create_timeline_event(db, case_id, schemas.TimelineEventCreate(
         event_type="media_uploaded",
         title=f"Media Uploaded: {file.filename}",
-        media_id=media.id
+        media_id=media.id,
+        event_date=datetime.utcnow()
     ))
     
     return media

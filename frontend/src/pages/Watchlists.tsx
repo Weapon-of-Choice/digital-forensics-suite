@@ -27,7 +27,7 @@ export default function Watchlists() {
   const [entryName, setEntryName] = useState('')
   const [entryNotes, setEntryNotes] = useState('')
 
-  const { data: watchlists = [], isLoading } = useQuery({
+  const { data: watchlists = [], isLoading, error } = useQuery({
     queryKey: ['watchlists', showActiveOnly],
     queryFn: () => api.getWatchlists(showActiveOnly),
   })
@@ -96,6 +96,24 @@ export default function Watchlists() {
     addEntryMutation.mutate({ watchlistId: selectedWatchlist.id, data: { name: entryName.trim(), notes: entryNotes.trim() || undefined } })
   }
 
+  const safeDate = (dateStr: string) => {
+    try {
+      return formatDistanceToNow(new Date(dateStr), { addSuffix: true })
+    } catch {
+      return 'Unknown date'
+    }
+  }
+
+  if (error) {
+    return (
+      <div className="p-8 text-center text-red-600">
+        <Shield className="w-12 h-12 mx-auto mb-4 opacity-50" />
+        <h3 className="text-lg font-medium">Failed to load watchlists</h3>
+        <p className="text-sm mt-2">Please try again later.</p>
+      </div>
+    )
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -134,7 +152,7 @@ export default function Watchlists() {
                 {!wl.is_active && <span className="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded">Inactive</span>}
               </div>
               {wl.description && <p className="text-sm text-slate-600 mb-4 line-clamp-2">{wl.description}</p>}
-              <div className="text-xs text-slate-400 mb-4">Created {formatDistanceToNow(new Date(wl.created_at), { addSuffix: true })}</div>
+              <div className="text-xs text-slate-400 mb-4">Created {safeDate(wl.created_at)}</div>
               <div className="flex gap-2 border-t border-slate-100 pt-4">
                 <button onClick={() => openEntriesModal(wl)} className="flex-1 py-2 text-sm text-slate-500 hover:text-violet-600 transition flex items-center justify-center gap-1">
                   <Eye size={16} /> Entries
@@ -243,7 +261,7 @@ export default function Watchlists() {
                       <p className="font-medium text-slate-900 truncate">{entry.name || `Entry #${entry.id}`}</p>
                       {entry.notes && <p className="text-sm text-slate-500 truncate">{entry.notes}</p>}
                     </div>
-                    <span className="text-xs text-slate-400">{formatDistanceToNow(new Date(entry.created_at), { addSuffix: true })}</span>
+                    <span className="text-xs text-slate-400">{safeDate(entry.created_at)}</span>
                     <button onClick={() => setEntryToDelete(entry)} className="text-red-500 hover:text-red-600 p-1"><Trash2 size={16} /></button>
                   </div>
                 ))}
