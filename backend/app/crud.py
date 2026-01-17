@@ -34,6 +34,17 @@ def delete_case(db: Session, case_id: int):
         db.commit()
 
 
+def update_case(db: Session, case_id: int, updates: schemas.CaseCreate) -> Optional[models.Case]:
+    case = get_case(db, case_id)
+    if case:
+        case.name = updates.name
+        if updates.description is not None:
+            case.description = updates.description
+        db.commit()
+        db.refresh(case)
+    return case
+
+
 # ============ MEDIA ============
 
 def create_media(db: Session, media: schemas.MediaCreate) -> models.Media:
@@ -143,6 +154,38 @@ def find_similar_media(db: Session, media_id: int, threshold: int = 10) -> List[
                 "case_id": media.case_id,
                 "distance": distance,
                 "original_filename": media.original_filename
+            })
+    
+    return sorted(matches, key=lambda x: x["distance"])
+
+
+def find_similar_media_by_file(db: Session, file_data: bytes, threshold: int = 10) -> List[dict]:
+    """Find similar images using perceptual hash of uploaded file"""
+    import imagehash
+    from PIL import Image
+    import io
+    try:
+        img = Image.open(io.BytesIO(file_data))
+        target_hash_str = str(imagehash.phash(img))
+        target_hash = int(target_hash_str, 16)
+    except Exception:
+        return []
+    
+    all_media = db.query(models.Media).filter(
+        models.Media.phash.isnot(None)
+    ).all()
+    
+    matches = []
+    for media in all_media:
+        media_hash = int(media.phash, 16)
+        distance = bin(target_hash ^ media_hash).count('1')
+        if distance <= threshold:
+            matches.append({
+                "media_id": media.id,
+                "case_id": media.case_id,
+                "distance": distance,
+                "original_filename": media.original_filename,
+                "match_score": 1.0 - (distance / 64.0)
             })
     
     return sorted(matches, key=lambda x: x["distance"])

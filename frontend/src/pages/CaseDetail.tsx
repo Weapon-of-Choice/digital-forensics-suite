@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api, Media, Face, Category } from '../api'
-import { Upload, Image, Users, Tag, X, MapPin, Edit2, Save, Loader2, Video, Search, FileJson } from 'lucide-react'
+import { Upload, Image, Users, Tag, X, MapPin, Edit2, Save, Loader2, Video, Search, FileJson, UserCheck } from 'lucide-react'
 import CategoryVoting from '../components/CategoryVoting'
 
 export default function CaseDetail() {
@@ -16,6 +16,14 @@ export default function CaseDetail() {
   const [editLon, setEditLon] = useState('')
   const [geoQuery, setGeoQuery] = useState('')
   const [geoResults, setGeoResults] = useState<any[]>([])
+
+  const [showEditCaseModal, setShowEditCaseModal] = useState(false)
+  const [editCaseName, setEditCaseName] = useState('')
+  const [editCaseDesc, setEditCaseDesc] = useState('')
+
+  const [showIdentifyModal, setShowIdentifyModal] = useState(false)
+  const [selectedFace, setSelectedFace] = useState<Face | null>(null)
+  const [identifyName, setIdentifyName] = useState('')
 
   const { data: caseData } = useQuery({ queryKey: ['case', caseId], queryFn: () => api.getCase(caseId) })
   const { data: media } = useQuery({ queryKey: ['caseMedia', caseId], queryFn: () => api.getCaseMedia(caseId) })
@@ -39,6 +47,23 @@ export default function CaseDetail() {
       queryClient.invalidateQueries({ queryKey: ['caseMedia', caseId] })
       setEditing(false)
     },
+  })
+
+  const updateCaseMutation = useMutation({
+    mutationFn: (data: { name?: string; description?: string }) => api.updateCase(caseId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['case', caseId] })
+      setShowEditCaseModal(false)
+    }
+  })
+
+  const identifyFaceMutation = useMutation({
+    mutationFn: ({ faceId, name }: { faceId: number; name: string }) => api.identifyFace(faceId, name),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['caseFaces', caseId] })
+      setShowIdentifyModal(false)
+      setIdentifyName('')
+    }
   })
 
   const handleUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -88,11 +113,39 @@ export default function CaseDetail() {
     setGeoQuery('')
   }
 
+  const openEditCase = () => {
+    if (!caseData) return
+    setEditCaseName(caseData.name)
+    setEditCaseDesc(caseData.description || '')
+    setShowEditCaseModal(true)
+  }
+
+  const handleSaveCase = () => {
+    if (!editCaseName.trim()) return
+    updateCaseMutation.mutate({ name: editCaseName, description: editCaseDesc })
+  }
+
+  const openIdentifyModal = (face: Face) => {
+    setSelectedFace(face)
+    setIdentifyName(face.identity || '')
+    setShowIdentifyModal(true)
+  }
+
+  const handleIdentify = () => {
+    if (!selectedFace || !identifyName.trim()) return
+    identifyFaceMutation.mutate({ faceId: selectedFace.id, name: identifyName.trim() })
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">{caseData?.name}</h1>
+          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+            {caseData?.name}
+            <button onClick={openEditCase} className="text-slate-400 hover:text-violet-600 transition p-1">
+              <Edit2 size={18} />
+            </button>
+          </h1>
           <p className="text-slate-500">{caseData?.description}</p>
         </div>
         <label className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-medium px-4 py-2 rounded-md cursor-pointer transition shadow-sm">
@@ -176,8 +229,8 @@ export default function CaseDetail() {
           ) : (
             <div className="bg-white border border-slate-200 rounded-lg p-4 space-y-3 max-h-96 overflow-y-auto shadow-sm">
               {faces?.map(face => (
-                <div key={face.id} className="flex items-center gap-3 p-2 bg-slate-50 rounded-md border border-slate-100">
-                  <div className="w-12 h-12 bg-slate-200 rounded-md overflow-hidden">
+                <div key={face.id} className="flex items-center gap-3 p-2 bg-slate-50 rounded-md border border-slate-100 group">
+                  <div className="w-12 h-12 bg-slate-200 rounded-md overflow-hidden shrink-0">
                     {face.thumbnail_path && (
                       <img
                         src={`http://localhost:8000${face.thumbnail_path}`}
@@ -186,10 +239,17 @@ export default function CaseDetail() {
                       />
                     )}
                   </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-slate-900">{face.identity || 'Unknown'}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-slate-900 truncate">{face.identity || 'Unknown'}</p>
                     <p className="text-xs text-slate-500">Media #{face.media_id}</p>
                   </div>
+                  <button 
+                    onClick={() => openIdentifyModal(face)}
+                    className="p-1.5 text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded transition"
+                    title="Identify Person"
+                  >
+                    <UserCheck size={16} />
+                  </button>
                 </div>
               ))}
             </div>
@@ -197,6 +257,7 @@ export default function CaseDetail() {
         </div>
       </div>
 
+      {/* Media Modal */}
       {selectedMedia && (
         <div className="fixed inset-0 bg-slate-600/80 backdrop-blur-sm flex items-center justify-center z-50 p-8">
           <div className="bg-white border border-slate-200 rounded-lg max-w-4xl w-full max-h-full overflow-auto shadow-2xl">
@@ -375,6 +436,70 @@ export default function CaseDetail() {
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Case Modal */}
+      {showEditCaseModal && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg">
+            <div className="flex items-center justify-between p-4 border-b border-slate-200">
+              <h2 className="text-lg font-semibold text-slate-900">Edit Case</h2>
+              <button onClick={() => setShowEditCaseModal(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+            </div>
+            <div className="p-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Name *</label>
+                <input type="text" value={editCaseName} onChange={(e) => setEditCaseName(e.target.value)} className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-900" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                <textarea value={editCaseDesc} onChange={(e) => setEditCaseDesc(e.target.value)} rows={3} className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-900 resize-none" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 p-4 border-t border-slate-200 bg-slate-50">
+              <button onClick={() => setShowEditCaseModal(false)} className="px-4 py-2 text-slate-700 hover:text-slate-900 transition">Cancel</button>
+              <button onClick={handleSaveCase} disabled={!editCaseName.trim() || updateCaseMutation.isPending} className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-md transition disabled:opacity-50 flex items-center gap-2">
+                {updateCaseMutation.isPending && <Loader2 size={16} className="animate-spin" />} Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Identify Face Modal */}
+      {showIdentifyModal && selectedFace && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-sm">
+            <div className="flex items-center justify-between p-4 border-b border-slate-200">
+              <h2 className="text-lg font-semibold text-slate-900">Identify Face</h2>
+              <button onClick={() => setShowIdentifyModal(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+            </div>
+            <div className="p-4 space-y-4">
+              <div className="flex justify-center">
+                {selectedFace.thumbnail_path && (
+                  <img src={`http://localhost:8000${selectedFace.thumbnail_path}`} className="w-24 h-24 rounded-lg object-cover bg-slate-200" alt="Face" />
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Person Name *</label>
+                <input 
+                  type="text" 
+                  value={identifyName} 
+                  onChange={(e) => setIdentifyName(e.target.value)} 
+                  placeholder="Enter name..." 
+                  className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-900" 
+                  autoFocus
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 p-4 border-t border-slate-200 bg-slate-50">
+              <button onClick={() => setShowIdentifyModal(false)} className="px-4 py-2 text-slate-700 hover:text-slate-900 transition">Cancel</button>
+              <button onClick={handleIdentify} disabled={!identifyName.trim() || identifyFaceMutation.isPending} className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-md transition disabled:opacity-50 flex items-center gap-2">
+                {identifyFaceMutation.isPending && <Loader2 size={16} className="animate-spin" />} Identify
+              </button>
             </div>
           </div>
         </div>

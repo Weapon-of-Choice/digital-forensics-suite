@@ -213,6 +213,11 @@ services:
       MINIO_SECURE: ${MINIO_SECURE:-false}
     volumes:
       - ./backend/app:/app/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     depends_on:
       db:
         condition: service_healthy
@@ -458,6 +463,21 @@ services:
     restart: unless-stopped
     networks:
       - frontend-net
+
+  seed-job:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: /bin/sh -c "python /app/app/seed_real.py && python /app/app/seed_video.py"
+    env_file:
+      - ./backend/.env
+    depends_on:
+      api:
+        condition: service_healthy
+      worker:
+        condition: service_started
+    networks:
+      - backend-net
 
 networks:
   frontend-net:

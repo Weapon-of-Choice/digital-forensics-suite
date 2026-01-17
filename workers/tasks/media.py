@@ -1,5 +1,7 @@
 import os
 import io
+import subprocess
+import tempfile
 from celery import shared_task
 from PIL import Image
 import imagehash
@@ -83,6 +85,41 @@ def create_thumbnail(file_data: bytes, size=(200, 200)) -> bytes:
         return None
 
 
+def create_video_thumbnail(file_data: bytes) -> bytes:
+    """Extract thumbnail from video using ffmpeg."""
+    temp_video_path = None
+    temp_thumb_path = None
+    try:
+        with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as temp_video:
+            temp_video.write(file_data)
+            temp_video_path = temp_video.name
+        
+        temp_thumb_path = temp_video_path + ".jpg"
+        
+        # Extract frame at 1s
+        cmd = [
+            "ffmpeg", "-y", "-i", temp_video_path,
+            "-ss", "00:00:01", "-vframes", "1",
+            "-vf", "scale=320:-1",
+            temp_thumb_path
+        ]
+        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        
+        if os.path.exists(temp_thumb_path):
+            with open(temp_thumb_path, "rb") as f:
+                thumb_data = f.read()
+            return thumb_data
+        return None
+    except Exception as e:
+        print(f"Video thumbnail error: {e}")
+        return None
+    finally:
+        if temp_video_path and os.path.exists(temp_video_path):
+            os.remove(temp_video_path)
+        if temp_thumb_path and os.path.exists(temp_thumb_path):
+            os.remove(temp_thumb_path)
+
+
 @shared_task(bind=True, name="tasks.media.process_media")
 def process_media(self, media_id: int):
     from tasks.faces import detect_and_store_faces
@@ -136,6 +173,13 @@ def process_media(self, media_id: int):
             categorize_media.delay(media_id, object_path)
             
         elif mime_type.startswith("video/"):
+            # Create thumbnail for video
+            thumb_data = create_video_thumbnail(file_data)
+            if thumb_data:
+                thumb_object_name = f"cases/{case_id}/{stored_filename}_thumb.jpg"
+                storage.upload_thumbnail(thumb_data, thumb_object_name)
+                updates["thumbnail_path"] = thumb_object_name
+
             # Queue video signature extraction
             extract_video_signature.delay(media_id, object_path)
         

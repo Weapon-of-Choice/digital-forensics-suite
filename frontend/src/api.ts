@@ -28,6 +28,8 @@ export const api = {
   getCase: (id: number) => fetchApi<CaseDetail>(`/cases/${id}`),
   createCase: (data: { name: string; description?: string }) =>
     fetchApi<Case>('/cases', { method: 'POST', body: JSON.stringify(data) }),
+  updateCase: (id: number, data: { name?: string; description?: string }) =>
+    fetchApi<Case>(`/cases/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteCase: (id: number) => fetchApi(`/cases/${id}`, { method: 'DELETE' }),
   
   getCaseMedia: (caseId: number) => fetchApi<Media[]>(`/cases/${caseId}/media`),
@@ -58,6 +60,17 @@ export const api = {
     fetchApi(`/search/similar?media_id=${mediaId}&threshold=${threshold}`),
   searchBySignature: (mediaId: number, matchType = 'combined', threshold = 0.7) =>
     fetchApi(`/search/signature?media_id=${mediaId}&match_type=${matchType}&threshold=${threshold}`),
+  searchByImage: async (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    const res = await fetch(`${API_URL}/search/similar/upload`, {
+      method: 'POST',
+      body: formData,
+      headers: getAuthHeader(),
+    })
+    if (!res.ok) throw new Error('Search failed')
+    return res.json()
+  },
   searchByLocation: (lat: number, lon: number, radiusKm = 10) =>
     fetchApi(`/search/location?lat=${lat}&lon=${lon}&radius_km=${radiusKm}`),
   

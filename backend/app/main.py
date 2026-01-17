@@ -60,7 +60,13 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
 
 @app.post("/cases", response_model=schemas.Case)
 def create_case(case: schemas.CaseCreate, db: Session = Depends(get_db)):
-    return crud.create_case(db, case)
+    db_case = crud.create_case(db, case)
+    crud.create_timeline_event(db, db_case.id, schemas.TimelineEventCreate(
+        event_type="case_created",
+        title=f"Case Created: {db_case.name}",
+        description=db_case.description
+    ))
+    return db_case
 
 
 @app.get("/cases", response_model=List[schemas.Case])
@@ -71,6 +77,14 @@ def list_cases(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
 @app.get("/cases/{case_id}", response_model=schemas.CaseDetail)
 def get_case(case_id: int, db: Session = Depends(get_db)):
     case = crud.get_case(db, case_id)
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found")
+    return case
+
+
+@app.put("/cases/{case_id}", response_model=schemas.Case)
+def update_case(case_id: int, updates: schemas.CaseCreate, db: Session = Depends(get_db)):
+    case = crud.update_case(db, case_id, updates)
     if not case:
         raise HTTPException(status_code=404, detail="Case not found")
     return case
@@ -119,6 +133,12 @@ async def upload_media(
     from celery import Celery
     celery_app = Celery(broker=os.environ.get("REDIS_URL", "redis://localhost:6379/0"))
     celery_app.send_task("tasks.media.process_media", args=[media.id], queue="media")
+    
+    crud.create_timeline_event(db, case_id, schemas.TimelineEventCreate(
+        event_type="media_uploaded",
+        title=f"Media Uploaded: {file.filename}",
+        media_id=media.id
+    ))
     
     return media
 
@@ -185,6 +205,15 @@ def search_faces(face_id: int, threshold: float = 0.6, db: Session = Depends(get
 def search_similar(media_id: int, threshold: int = 10, db: Session = Depends(get_db)):
     """Find visually similar images by perceptual hash"""
     return crud.find_similar_media(db, media_id, threshold)
+
+
+@app.post("/search/similar/upload")
+async def search_similar_upload(
+    file: UploadFile = File(...), threshold: int = 10, db: Session = Depends(get_db)
+):
+    """Find similar images by uploading a file"""
+    content = await file.read()
+    return crud.find_similar_media_by_file(db, content, threshold)
 
 
 @app.get("/search/location")
