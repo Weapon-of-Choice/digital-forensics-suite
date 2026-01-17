@@ -27,28 +27,7 @@ export default function Watchlists() {
   const [entryName, setEntryName] = useState('')
   const [entryNotes, setEntryNotes] = useState('')
 
-  // Helpers (Defined before Mutations)
-  const openCreateModal = () => { setFormName(''); setFormDescription(''); setFormAlertOnMatch(true); setShowCreateModal(true) }
-  const closeCreateModal = () => setShowCreateModal(false)
-
-  const openEditModal = (wl: Watchlist) => {
-    setSelectedWatchlist(wl)
-    setFormName(wl.name)
-    setFormDescription(wl.description || '')
-    setFormAlertOnMatch(wl.alert_on_match)
-    setFormIsActive(wl.is_active)
-    setShowEditModal(true)
-  }
-  const closeEditModal = () => { setShowEditModal(false); setSelectedWatchlist(null) }
-
-  const openEntriesModal = (wl: Watchlist) => { setSelectedWatchlist(wl); setShowEntriesModal(true) }
-  const closeEntriesModal = () => { setShowEntriesModal(false); setSelectedWatchlist(null) }
-  
-  const openAddEntryModal = () => { setEntryName(''); setEntryNotes(''); setShowAddEntryModal(true) }
-  const closeAddEntryModal = () => setShowAddEntryModal(false)
-
-  // Queries
-  const { data: watchlists = [], isLoading, error } = useQuery({
+  const { data: watchlists, isLoading, error } = useQuery({
     queryKey: ['watchlists', showActiveOnly],
     queryFn: () => api.getWatchlists(showActiveOnly),
   })
@@ -59,36 +38,49 @@ export default function Watchlists() {
     enabled: !!selectedWatchlist && showEntriesModal,
   })
 
-  // Mutations
   const createMutation = useMutation({
     mutationFn: (data: { name: string; description?: string; alert_on_match?: boolean }) => api.createWatchlist(data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['watchlists'] }); closeCreateModal() },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['watchlists'] }); setShowCreateModal(false) },
   })
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: { name?: string; description?: string; is_active?: boolean; alert_on_match?: boolean } }) =>
       api.updateWatchlist(id, data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['watchlists'] }); closeEditModal() },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['watchlists'] }); setShowEditModal(false) },
   })
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => api.deleteWatchlist(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['watchlists'] }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['watchlists'] }); setWatchlistToDelete(null) },
   })
 
   const addEntryMutation = useMutation({
     mutationFn: ({ watchlistId, data }: { watchlistId: number; data: { name?: string; notes?: string } }) =>
       api.addWatchlistEntry(watchlistId, data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['watchlist-entries', selectedWatchlist?.id] }); closeAddEntryModal() },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['watchlist-entries', selectedWatchlist?.id] }); setShowAddEntryModal(false) },
   })
 
   const deleteEntryMutation = useMutation({
     mutationFn: ({ watchlistId, entryId }: { watchlistId: number; entryId: number }) =>
       api.deleteWatchlistEntry(watchlistId, entryId),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['watchlist-entries', selectedWatchlist?.id] }) },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['watchlist-entries', selectedWatchlist?.id] }); setEntryToDelete(null) },
   })
 
-  // Handlers
+  const openCreateModal = () => { setFormName(''); setFormDescription(''); setFormAlertOnMatch(true); setShowCreateModal(true) }
+  
+  const openEditModal = (wl: Watchlist) => {
+    setSelectedWatchlist(wl)
+    setFormName(wl.name)
+    setFormDescription(wl.description || '')
+    setFormAlertOnMatch(wl.alert_on_match)
+    setFormIsActive(wl.is_active)
+    setShowEditModal(true)
+  }
+
+  const openEntriesModal = (wl: Watchlist) => { setSelectedWatchlist(wl); setShowEntriesModal(true) }
+  
+  const openAddEntryModal = () => { setEntryName(''); setEntryNotes(''); setShowAddEntryModal(true) }
+
   const handleCreate = () => {
     if (!formName.trim()) return
     createMutation.mutate({ name: formName.trim(), description: formDescription.trim() || undefined, alert_on_match: formAlertOnMatch })
@@ -102,10 +94,6 @@ export default function Watchlists() {
   const handleAddEntry = () => {
     if (!selectedWatchlist || !entryName.trim()) return
     addEntryMutation.mutate({ watchlistId: selectedWatchlist.id, data: { name: entryName.trim(), notes: entryNotes.trim() || undefined } })
-  }
-
-  const handleDeleteEntry = (entry: WatchlistEntry) => {
-    setEntryToDelete(entry)
   }
 
   const safeDate = (dateStr?: string) => {
@@ -144,7 +132,7 @@ export default function Watchlists() {
 
       {isLoading ? (
         <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-violet-600" /></div>
-      ) : watchlists.length === 0 ? (
+      ) : !watchlists || watchlists.length === 0 ? (
         <div className="bg-white border border-slate-200 rounded-lg p-12 text-center shadow-sm">
           <Shield className="w-12 h-12 text-slate-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-slate-900 mb-2">No watchlists yet</h3>

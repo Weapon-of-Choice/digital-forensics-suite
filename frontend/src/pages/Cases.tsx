@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { api, Case } from '../api'
-import { Plus, Trash2, FolderOpen, Loader2 } from 'lucide-react'
+import { Plus, Trash2, FolderOpen } from 'lucide-react'
 import ConfirmDialog from '../components/ui/confirm-dialog'
+import { Skeleton } from '../components/ui/skeleton'
 
 export default function Cases() {
   const queryClient = useQueryClient()
@@ -36,14 +37,6 @@ export default function Cases() {
     if (caseToDelete) {
       deleteMutation.mutate(caseToDelete.id)
     }
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-slate-900" />
-      </div>
-    )
   }
 
   if (error) {
@@ -95,9 +88,8 @@ export default function Cases() {
               <button
                 onClick={() => createMutation.mutate({ name, description })}
                 disabled={!name || createMutation.isPending}
-                className="bg-violet-600 hover:bg-violet-700 text-white font-medium disabled:opacity-50 px-6 py-2 rounded-md transition shadow-sm flex items-center gap-2"
+                className="bg-violet-600 hover:bg-violet-700 text-white font-medium disabled:opacity-50 px-6 py-2 rounded-md transition shadow-sm"
               >
-                {createMutation.isPending && <Loader2 size={16} className="animate-spin" />}
                 {createMutation.isPending ? 'Creating...' : 'Create Case'}
               </button>
             </div>
@@ -105,7 +97,16 @@ export default function Cases() {
         </div>
       )}
 
-      {cases?.length === 0 ? (
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+        </div>
+      ) : cases?.length === 0 ? (
         <div className="text-center py-12">
           <FolderOpen size={48} className="mx-auto text-slate-400 mb-4" />
           <p className="text-slate-500">No cases yet. Create one to get started.</p>

@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Bell, AlertTriangle, Info, CheckCircle, X, Loader2, Check } from 'lucide-react'
+import { Bell, AlertTriangle, Info, CheckCircle, X, Check } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { api, Alert } from '../api'
+import { Skeleton } from '../components/ui/skeleton'
 
 type StatusFilter = 'all' | 'active' | 'dismissed' | 'resolved'
 
@@ -10,13 +11,11 @@ export default function Alerts() {
   const queryClient = useQueryClient()
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
 
-  // Fetch alerts
   const { data: alerts = [], isLoading, error } = useQuery({
     queryKey: ['alerts', statusFilter === 'all' ? undefined : statusFilter],
     queryFn: () => api.getAlerts(undefined, statusFilter === 'all' ? undefined : statusFilter),
   })
 
-  // Update alert mutation
   const updateMutation = useMutation({
     mutationFn: ({ alertId, status }: { alertId: number; status: string }) =>
       api.updateAlert(alertId, status),
@@ -88,14 +87,6 @@ export default function Alerts() {
 
   const activeCount = alerts.filter((a: Alert) => a.status === 'active').length
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-violet-600" />
-      </div>
-    )
-  }
-
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
@@ -109,7 +100,7 @@ export default function Alerts() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold text-slate-900">System Alerts</h1>
-          {activeCount > 0 && (
+          {!isLoading && activeCount > 0 && (
             <span className="bg-red-100 text-red-600 text-xs font-semibold px-2 py-1 rounded-full">
               {activeCount} active
             </span>
@@ -131,7 +122,7 @@ export default function Alerts() {
               </button>
             ))}
           </div>
-          {activeCount > 0 && (
+          {!isLoading && activeCount > 0 && (
             <button
               onClick={handleMarkAllRead}
               className="text-sm text-slate-500 hover:text-slate-900 transition"
@@ -142,7 +133,13 @@ export default function Alerts() {
         </div>
       </div>
 
-      {sortedAlerts.length === 0 ? (
+      {isLoading ? (
+        <div className="space-y-4">
+           <Skeleton className="h-20 w-full" />
+           <Skeleton className="h-20 w-full" />
+           <Skeleton className="h-20 w-full" />
+        </div>
+      ) : sortedAlerts.length === 0 ? (
         <div className="bg-white border border-slate-200 rounded-lg p-12 text-center shadow-sm">
           <Bell className="w-12 h-12 text-slate-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-slate-900 mb-2">No alerts</h3>
@@ -218,8 +215,8 @@ export default function Alerts() {
         </div>
       )}
 
-      {/* Summary stats */}
-      {alerts.length > 0 && (
+      {/* Summary stats - only show if not loading */}
+      {!isLoading && alerts.length > 0 && (
         <div className="mt-6 grid grid-cols-3 gap-4">
           <div className="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
             <div className="flex items-center gap-3">
