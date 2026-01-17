@@ -1,0 +1,92 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - navigation [ref=e4]:
+    - generic [ref=e6]:
+      - img [ref=e8]
+      - generic [ref=e10]:
+        - heading "Forensic Analysis" [level=1] [ref=e11]
+        - paragraph [ref=e12]: Investigation Platform
+    - list [ref=e13]:
+      - listitem [ref=e14]:
+        - link "Dashboard" [ref=e15] [cursor=pointer]:
+          - /url: /
+          - img [ref=e16]
+          - text: Dashboard
+      - listitem [ref=e19]:
+        - link "Cases" [ref=e20] [cursor=pointer]:
+          - /url: /cases
+          - img [ref=e21]
+          - text: Cases
+      - listitem [ref=e23]:
+        - link "Map" [ref=e24] [cursor=pointer]:
+          - /url: /map
+          - img [ref=e25]
+          - text: Map
+      - listitem [ref=e27]:
+        - link "Search" [ref=e28] [cursor=pointer]:
+          - /url: /search
+          - img [ref=e29]
+          - text: Search
+      - listitem [ref=e32]:
+        - link "Timeline" [ref=e33] [cursor=pointer]:
+          - /url: /timeline
+          - img [ref=e34]
+          - text: Timeline
+      - listitem [ref=e37]:
+        - link "Notes" [ref=e38] [cursor=pointer]:
+          - /url: /notes
+          - img [ref=e39]
+          - text: Notes
+      - listitem [ref=e42]:
+        - link "Tasks" [ref=e43] [cursor=pointer]:
+          - /url: /tasks
+          - img [ref=e44]
+          - text: Tasks
+      - listitem [ref=e47]:
+        - link "Watchlists" [active] [ref=e48] [cursor=pointer]:
+          - /url: /watchlists
+          - img [ref=e49]
+          - text: Watchlists
+      - listitem [ref=e51]:
+        - link "Alerts" [ref=e52] [cursor=pointer]:
+          - /url: /alerts
+          - img [ref=e53]
+          - text: Alerts
+      - listitem [ref=e56]:
+        - link "Persons" [ref=e57] [cursor=pointer]:
+          - /url: /persons
+          - img [ref=e58]
+          - text: Persons
+      - listitem [ref=e63]:
+        - link "Queue" [ref=e64] [cursor=pointer]:
+          - /url: /queue
+          - img [ref=e65]
+          - text: Queue
+    - generic [ref=e68]:
+      - generic [ref=e69]:
+        - paragraph
+        - paragraph
+        - generic [ref=e70]: Admin
+      - button "Sign out" [ref=e71] [cursor=pointer]:
+        - img [ref=e72]
+        - text: Sign out
+  - main [ref=e75]:
+    - generic [ref=e76]:
+      - generic [ref=e77]:
+        - heading "Watchlists" [level=1] [ref=e78]
+        - generic [ref=e79]:
+          - generic [ref=e80] [cursor=pointer]:
+            - checkbox "Active only" [ref=e81]
+            - generic [ref=e82]: Active only
+          - button "Create List" [ref=e83] [cursor=pointer]:
+            - img [ref=e84]
+            - text: Create List
+      - generic [ref=e85]:
+        - img [ref=e86]
+        - heading "No watchlists yet" [level=3] [ref=e88]
+        - button "Create Watchlist" [ref=e89] [cursor=pointer]:
+          - img [ref=e90]
+          - text: Create Watchlist
+```

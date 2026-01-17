@@ -352,7 +352,7 @@ export default function CaseDetail() {
                         <p className="font-semibold text-emerald-700 flex items-center gap-1 mb-1">
                           <Image size={14} /> Image Signature
                         </p>
-                        <p className="text-xs text-slate-500">ORB Descriptors & Color Histogram extracted.</p>
+                        <p className="text-xs text-slate-500">ORB Descriptors & Colour Histogram extracted.</p>
                       </div>
                     )}
                   </div>

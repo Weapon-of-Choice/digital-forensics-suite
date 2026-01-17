@@ -89,6 +89,8 @@ class Media(BaseModel):
     gps_lon: Optional[float]
     capture_date: Optional[datetime]
     created_at: datetime
+    video_signature: Optional[VideoSignature] = None
+    image_signature: Optional[ImageSignature] = None
     
     class Config:
         from_attributes = True
@@ -101,8 +103,6 @@ class MediaDetail(Media):
     camera_model: Optional[str]
     categories: Optional[str]
     faces: List["Face"] = []
-    video_signature: Optional[VideoSignature] = None
-    image_signature: Optional[ImageSignature] = None
 
 
 # ============ MAP ============
