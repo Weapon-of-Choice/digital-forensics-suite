@@ -20,6 +20,38 @@ export default function Notes() {
   const [formContent, setFormContent] = useState('')
   const [formPinned, setFormPinned] = useState(false)
 
+  // Helpers (Before Mutations)
+  const openCreateModal = () => {
+    setFormCaseId('')
+    setFormTitle('')
+    setFormContent('')
+    setFormPinned(false)
+    setShowCreateModal(true)
+  }
+
+  const closeCreateModal = () => {
+    setShowCreateModal(false)
+    setFormCaseId('')
+    setFormTitle('')
+    setFormContent('')
+    setFormPinned(false)
+  }
+
+  const openViewModal = (note: CaseNote) => {
+    setSelectedNote(note)
+    setFormTitle(note.title || '')
+    setFormContent(note.content)
+    setFormPinned(note.is_pinned)
+    setEditMode(false)
+    setShowViewModal(true)
+  }
+
+  const closeViewModal = () => {
+    setShowViewModal(false)
+    setSelectedNote(null)
+    setEditMode(false)
+  }
+
   // Fetch notes
   const { data: notes = [], isLoading, error } = useQuery({
     queryKey: ['notes'],
@@ -63,37 +95,7 @@ export default function Notes() {
     },
   })
 
-  const openCreateModal = () => {
-    setFormCaseId('')
-    setFormTitle('')
-    setFormContent('')
-    setFormPinned(false)
-    setShowCreateModal(true)
-  }
-
-  const closeCreateModal = () => {
-    setShowCreateModal(false)
-    setFormCaseId('')
-    setFormTitle('')
-    setFormContent('')
-    setFormPinned(false)
-  }
-
-  const openViewModal = (note: CaseNote) => {
-    setSelectedNote(note)
-    setFormTitle(note.title || '')
-    setFormContent(note.content)
-    setFormPinned(note.is_pinned)
-    setEditMode(false)
-    setShowViewModal(true)
-  }
-
-  const closeViewModal = () => {
-    setShowViewModal(false)
-    setSelectedNote(null)
-    setEditMode(false)
-  }
-
+  // Handlers
   const handleCreate = () => {
     if (!formCaseId || !formTitle.trim()) return
     createMutation.mutate({
@@ -260,7 +262,7 @@ export default function Notes() {
                 value={formTitle}
                 onChange={(e) => setFormTitle(e.target.value)}
                 placeholder="Note title"
-                className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-900"
+                className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-900 placeholder-slate-400"
               />
             </div>
             <div>
@@ -270,7 +272,7 @@ export default function Notes() {
                 onChange={(e) => setFormContent(e.target.value)}
                 placeholder="Write your note..."
                 rows={5}
-                className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-900 resize-none"
+                className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-900 placeholder-slate-400 resize-none"
               />
             </div>
             <label className="flex items-center gap-2 cursor-pointer">
@@ -293,7 +295,7 @@ export default function Notes() {
             <button
               onClick={handleCreate}
               disabled={!formCaseId || !formTitle.trim() || createMutation.isPending}
-              className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-md transition disabled:opacity-50 flex items-center gap-2 text-sm font-medium"
+              className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {createMutation.isPending && <Loader2 size={16} className="animate-spin" />}
               Create
@@ -365,7 +367,11 @@ export default function Notes() {
             {editMode ? (
                <>
                  <button
-                   onClick={() => setEditMode(false)}
+                   onClick={() => {
+                     setEditMode(false)
+                     setFormTitle(selectedNote.title)
+                     setFormContent(selectedNote.content)
+                   }}
                    className="px-4 py-2 text-slate-700 hover:text-slate-900 transition text-sm font-medium"
                  >
                    Cancel

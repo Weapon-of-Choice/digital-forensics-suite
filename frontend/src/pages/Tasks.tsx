@@ -4,12 +4,15 @@ import { ListTodo, CheckCircle2, Circle, Clock, Plus, X, Trash2, Loader2 } from 
 import { formatDueDate, isPast, isToday, isTomorrow } from 'date-fns'
 import { format } from 'date-fns'
 import { api, Task, Case } from '../api'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog'
+import ConfirmDialog from '../components/ui/confirm-dialog'
 
 type StatusFilter = 'all' | 'pending' | 'in_progress' | 'completed'
 
 export default function Tasks() {
   const queryClient = useQueryClient()
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null)
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
 
   // Form state
@@ -18,6 +21,20 @@ export default function Tasks() {
   const [formDescription, setFormDescription] = useState('')
   const [formPriority, setFormPriority] = useState<'low' | 'medium' | 'high'>('medium')
   const [formDueDate, setFormDueDate] = useState('')
+
+  // Helpers (Before Mutations)
+  const openCreateModal = () => {
+    setFormCaseId('')
+    setFormTitle('')
+    setFormDescription('')
+    setFormPriority('medium')
+    setFormDueDate('')
+    setShowCreateModal(true)
+  }
+
+  const closeCreateModal = () => {
+    setShowCreateModal(false)
+  }
 
   // Fetch tasks
   const { data: tasks = [], isLoading, error } = useQuery({
@@ -59,22 +76,11 @@ export default function Tasks() {
     mutationFn: (taskId: number) => api.deleteTask(taskId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] })
+      setTaskToDelete(null)
     },
   })
 
-  const openCreateModal = () => {
-    setFormCaseId('')
-    setFormTitle('')
-    setFormDescription('')
-    setFormPriority('medium')
-    setFormDueDate('')
-    setShowCreateModal(true)
-  }
-
-  const closeCreateModal = () => {
-    setShowCreateModal(false)
-  }
-
+  // Handlers
   const handleCreate = () => {
     if (!formCaseId || !formTitle.trim()) return
     createMutation.mutate({
@@ -96,9 +102,9 @@ export default function Tasks() {
     })
   }
 
-  const handleDelete = (taskId: number) => {
-    if (confirm('Are you sure you want to delete this task?')) {
-      deleteMutation.mutate(taskId)
+  const handleDelete = () => {
+    if (taskToDelete) {
+      deleteMutation.mutate(taskToDelete.id)
     }
   }
 
@@ -109,19 +115,27 @@ export default function Tasks() {
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return null
-    const date = new Date(dateStr)
-    if (isToday(date)) return 'Today'
-    if (isTomorrow(date)) return 'Tomorrow'
-    if (isPast(date)) return `Overdue (${format(date, 'MMM d')})`
-    return format(date, 'MMM d')
+    try {
+        const date = new Date(dateStr)
+        if (isToday(date)) return 'Today'
+        if (isTomorrow(date)) return 'Tomorrow'
+        if (isPast(date)) return `Overdue (${format(date, 'MMM d')})`
+        return format(date, 'MMM d')
+    } catch {
+        return 'Invalid Date'
+    }
   }
 
   const getDueDateClass = (dateStr?: string) => {
     if (!dateStr) return 'text-slate-500'
-    const date = new Date(dateStr)
-    if (isPast(date) && !isToday(date)) return 'text-red-600'
-    if (isToday(date)) return 'text-amber-600'
-    return 'text-slate-500'
+    try {
+        const date = new Date(dateStr)
+        if (isPast(date) && !isToday(date)) return 'text-red-600'
+        if (isToday(date)) return 'text-amber-600'
+        return 'text-slate-500'
+    } catch {
+        return 'text-slate-500'
+    }
   }
 
   const getPriorityClass = (priority: string) => {
@@ -144,6 +158,16 @@ export default function Tasks() {
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   })
 
+  if (error) {
+    return (
+      <div className="p-8 text-center text-red-600">
+        <ListTodo className="w-12 h-12 mx-auto mb-4 opacity-50" />
+        <h3 className="text-lg font-medium">Failed to load tasks</h3>
+        <p className="text-sm mt-2">Please try again later.</p>
+      </div>
+    )
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -162,16 +186,15 @@ export default function Tasks() {
               {status === 'all' ? 'All' : status === 'in_progress' ? 'In Progress' : status.charAt(0).toUpperCase() + status.slice(1)}
             </button>
           ))}
+          <button onClick={openCreateModal} className="ml-2 bg-violet-600 hover:bg-violet-700 text-white font-medium px-4 py-2 rounded-lg transition shadow-sm flex items-center gap-2">
+            <Plus size={20} /> Create Task
+          </button>
         </div>
       </div>
 
       {isLoading ? (
         <div className="flex items-center justify-center h-64">
           <Loader2 className="w-8 h-8 animate-spin text-slate-900" />
-        </div>
-      ) : error ? (
-        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
-          Failed to load tasks. Please try again.
         </div>
       ) : sortedTasks.length === 0 ? (
         <div className="bg-white border border-slate-200 rounded-lg p-12 text-center shadow-sm">
@@ -254,8 +277,7 @@ export default function Tasks() {
                 </div>
                 <div className="w-16 flex justify-end">
                   <button
-                    onClick={() => handleDelete(task.id)}
-                    disabled={deleteMutation.isPending}
+                    onClick={() => setTaskToDelete(task)}
                     className="opacity-0 group-hover:opacity-100 p-2 text-slate-400 hover:text-red-600 transition"
                   >
                     <Trash2 size={16} />
@@ -278,96 +300,99 @@ export default function Tasks() {
       )}
 
       {/* Create Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg">
-            <div className="flex items-center justify-between p-4 border-b border-slate-200">
-              <h2 className="text-lg font-semibold text-slate-900">Create Task</h2>
-              <button onClick={closeCreateModal} className="text-slate-400 hover:text-slate-600">
-                <X size={20} />
-              </button>
+      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Create Task</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Case *</label>
+              <select
+                value={formCaseId}
+                onChange={(e) => setFormCaseId(e.target.value ? Number(e.target.value) : '')}
+                className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-900"
+              >
+                <option value="">Select a case...</option>
+                {cases.map((c: Case) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
             </div>
-            <div className="p-4 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Title *</label>
+              <input
+                type="text"
+                value={formTitle}
+                onChange={(e) => setFormTitle(e.target.value)}
+                placeholder="Task title"
+                className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-900 placeholder-slate-400"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+              <textarea
+                value={formDescription}
+                onChange={(e) => setFormDescription(e.target.value)}
+                placeholder="Task description (optional)"
+                rows={3}
+                className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-900 placeholder-slate-400 resize-none"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Case *</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Priority</label>
                 <select
-                  value={formCaseId}
-                  onChange={(e) => setFormCaseId(e.target.value ? Number(e.target.value) : '')}
-                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900 text-slate-900"
+                  value={formPriority}
+                  onChange={(e) => setFormPriority(e.target.value as 'low' | 'medium' | 'high')}
+                  className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-900"
                 >
-                  <option value="">Select a case...</option>
-                  {cases.map((c: Case) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Title *</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Due Date</label>
                 <input
-                  type="text"
-                  value={formTitle}
-                  onChange={(e) => setFormTitle(e.target.value)}
-                  placeholder="Task title"
-                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900 text-slate-900 placeholder-slate-400"
+                  type="date"
+                  value={formDueDate}
+                  onChange={(e) => setFormDueDate(e.target.value)}
+                  className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-900"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
-                <textarea
-                  value={formDescription}
-                  onChange={(e) => setFormDescription(e.target.value)}
-                  placeholder="Task description (optional)"
-                  rows={3}
-                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900 text-slate-900 placeholder-slate-400 resize-none"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Priority</label>
-                  <select
-                    value={formPriority}
-                    onChange={(e) => setFormPriority(e.target.value as 'low' | 'medium' | 'high')}
-                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900 text-slate-900"
-                  >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Due Date</label>
-                  <input
-                    type="date"
-                    value={formDueDate}
-                    onChange={(e) => setFormDueDate(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900 text-slate-900"
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-end gap-3 p-4 border-t border-slate-200 bg-slate-50">
-              <button
-                type="button"
-                onClick={closeCreateModal}
-                className="px-4 py-2 text-slate-700 hover:text-slate-900 transition"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleCreate}
-                disabled={!formCaseId || !formTitle.trim() || createMutation.isPending}
-                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                {createMutation.isPending && <Loader2 size={16} className="animate-spin" />}
-                Create Task
-              </button>
             </div>
           </div>
-        </div>
-      )}
+          <DialogFooter>
+            <button
+              onClick={closeCreateModal}
+              className="px-4 py-2 text-slate-700 hover:text-slate-900 transition text-sm font-medium"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleCreate}
+              disabled={!formCaseId || !formTitle.trim() || createMutation.isPending}
+              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium"
+            >
+              {createMutation.isPending && <Loader2 size={16} className="animate-spin" />}
+              Create Task
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <ConfirmDialog
+        isOpen={!!taskToDelete}
+        onClose={() => setTaskToDelete(null)}
+        onConfirm={handleDelete}
+        title="Delete Task"
+        description={`Are you sure you want to delete task "${taskToDelete?.title}"?`}
+        confirmText="Delete"
+        variant="danger"
+      />
     </div>
   )
 }
