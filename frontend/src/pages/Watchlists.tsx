@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Shield, Plus, X, Eye, Edit2, Trash2, Loader2 } from 'lucide-react'
-import { formatDistanceToNow } from 'date-fns'
 import { api, Watchlist, WatchlistEntry } from '../api'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog'
 import ConfirmDialog from '../components/ui/confirm-dialog'
@@ -96,11 +95,12 @@ export default function Watchlists() {
     addEntryMutation.mutate({ watchlistId: selectedWatchlist.id, data: { name: entryName.trim(), notes: entryNotes.trim() || undefined } })
   }
 
-  const safeDate = (dateStr: string) => {
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return 'Unknown date'
     try {
-      return formatDistanceToNow(new Date(dateStr), { addSuffix: true })
+      return new Date(dateStr).toLocaleDateString()
     } catch {
-      return 'Unknown date'
+      return 'Invalid date'
     }
   }
 
@@ -152,7 +152,7 @@ export default function Watchlists() {
                 {!wl.is_active && <span className="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded">Inactive</span>}
               </div>
               {wl.description && <p className="text-sm text-slate-600 mb-4 line-clamp-2">{wl.description}</p>}
-              <div className="text-xs text-slate-400 mb-4">Created {safeDate(wl.created_at)}</div>
+              <div className="text-xs text-slate-400 mb-4">Created {formatDate(wl.created_at)}</div>
               <div className="flex gap-2 border-t border-slate-100 pt-4">
                 <button onClick={() => openEntriesModal(wl)} className="flex-1 py-2 text-sm text-slate-500 hover:text-violet-600 transition flex items-center justify-center gap-1">
                   <Eye size={16} /> Entries
@@ -261,7 +261,7 @@ export default function Watchlists() {
                       <p className="font-medium text-slate-900 truncate">{entry.name || `Entry #${entry.id}`}</p>
                       {entry.notes && <p className="text-sm text-slate-500 truncate">{entry.notes}</p>}
                     </div>
-                    <span className="text-xs text-slate-400">{safeDate(entry.created_at)}</span>
+                    <span className="text-xs text-slate-400">{formatDate(entry.created_at)}</span>
                     <button onClick={() => setEntryToDelete(entry)} className="text-red-500 hover:text-red-600 p-1"><Trash2 size={16} /></button>
                   </div>
                 ))}
