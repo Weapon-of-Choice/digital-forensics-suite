@@ -347,14 +347,17 @@ def vote_on_media_category(db: Session, mc_id: int, user_id: str, vote: int) -> 
             vote=vote
         )
         db.add(new_vote)
+        db.commit()
     
-    if vote == 1:
-        mc.upvotes += 1
-    else:
-        mc.downvotes += 1
-    
-    db.commit()
-    return {"status": "voted", "upvotes": mc.upvotes, "downvotes": mc.downvotes}
+    db.refresh(mc)
+    return _format_media_category(db, mc)
+
+
+def remove_media_category(db: Session, mc_id: int):
+    mc = db.query(models.MediaCategory).filter(models.MediaCategory.id == mc_id).first()
+    if mc:
+        db.delete(mc)
+        db.commit()
 
 
 def add_case_category(db: Session, case_id: int, category_id: int, source: str = "user") -> dict:
@@ -434,6 +437,13 @@ def vote_on_case_category(db: Session, cc_id: int, user_id: str, vote: int) -> d
     
     db.commit()
     return {"status": "voted", "upvotes": cc.upvotes, "downvotes": cc.downvotes}
+
+
+def remove_case_category(db: Session, cc_id: int):
+    cc = db.query(models.CaseCategory).filter(models.CaseCategory.id == cc_id).first()
+    if cc:
+        db.delete(cc)
+        db.commit()
 
 
 def save_image_signature(

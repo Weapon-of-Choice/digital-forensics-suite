@@ -102,6 +102,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ user_id: userId, vote }),
     }),
+  removeMediaCategory: (mcId: number) => fetchApi(`/media-categories/${mcId}`, { method: 'DELETE' }),
   
   getCaseCategories: (caseId: number) => fetchApi<CaseCategory[]>(`/cases/${caseId}/categories`),
   addCaseCategory: (caseId: number, categoryId: number) =>
@@ -114,6 +115,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ user_id: userId, vote }),
     }),
+  removeCaseCategory: (ccId: number) => fetchApi(`/case-categories/${ccId}`, { method: 'DELETE' }),
   
   getCaseReport: (caseId: number) => fetchApi(`/cases/${caseId}/report`),
 
@@ -189,6 +191,32 @@ export const api = {
     fetchApi(`/tasks/batch-process?case_id=${caseId}`, { method: 'POST' }),
   triggerRecategorize: (caseId: number) =>
     fetchApi(`/tasks/recategorize-case/${caseId}`, { method: 'POST' }),
+
+  triggerClusterFaces: (caseId?: number) =>
+    fetchApi(`/tasks/cluster-faces${caseId ? `?case_id=${caseId}` : ''}`, { method: 'POST' }),
+
+  analyzeFace: async (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    const res = await fetch(`${API_URL}/analyze/faces`, { method: 'POST', body: formData, headers: getAuthHeader() })
+    if (!res.ok) throw new Error('Analysis failed')
+    return res.json()
+  },
+  analyzeCategory: async (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    const res = await fetch(`${API_URL}/analyze/categories`, { method: 'POST', body: formData, headers: getAuthHeader() })
+    if (!res.ok) throw new Error('Analysis failed')
+    return res.json()
+  },
+  analyzeVSM: async (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    const res = await fetch(`${API_URL}/analyze/vsm`, { method: 'POST', body: formData, headers: getAuthHeader() })
+    if (!res.ok) throw new Error('Analysis failed')
+    return res.json()
+  },
+  analyzeGeocode: (query: string) => fetchApi<any>(`/analyze/geocoder?q=${encodeURIComponent(query)}`),
 }
 
 export interface TimelineEvent {

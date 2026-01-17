@@ -17,6 +17,7 @@ import Watchlists from './pages/Watchlists'
 import Alerts from './pages/Alerts'
 import Persons from './pages/Persons'
 import QueueMonitor from './pages/QueueMonitor'
+import ServicesPlayground from './pages/ServicesPlayground'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth()
@@ -78,6 +79,7 @@ export default function App() {
             <Route path="/alerts" element={<ProtectedRoute><Alerts /></ProtectedRoute>} />
             <Route path="/persons" element={<ProtectedRoute><Persons /></ProtectedRoute>} />
             <Route path="/queue" element={<ProtectedRoute><QueueMonitor /></ProtectedRoute>} />
+            <Route path="/playground" element={<ProtectedRoute><ServicesPlayground /></ProtectedRoute>} />
           </Routes>
         </main>
       </div>

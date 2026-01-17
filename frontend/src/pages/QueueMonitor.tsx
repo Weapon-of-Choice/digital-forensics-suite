@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { api } from '../api'
 import { Activity, Clock, CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react'
 import { Skeleton } from '../components/ui/skeleton'
+import { formatDistanceToNow } from 'date-fns'
 
 export default function QueueMonitor() {
   const { data: queueStatus, isLoading, refetch } = useQuery({
@@ -95,18 +96,29 @@ export default function QueueMonitor() {
             <div className="bg-white rounded-lg p-6 border border-slate-200 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
                 <CheckCircle className="text-emerald-500" size={24} />
-                <h2 className="text-lg font-semibold text-slate-900">Recently Completed</h2>
+                <h2 className="text-lg font-semibold text-slate-900">Recent Activity</h2>
               </div>
-              <div className="space-y-2 max-h-32 overflow-y-auto">
-                {queueStatus?.recent_completed?.length === 0 ? (
-                  <p className="text-slate-500 text-sm">No recent completions</p>
-                ) : (
-                  queueStatus?.recent_completed?.slice(0, 5).map((item) => (
-                    <div key={item.id} className="flex justify-between text-sm">
-                      <span className="text-slate-600 truncate max-w-[150px]">{item.filename}</span>
-                      <span className="text-slate-400">Case #{item.case_id}</span>
+              <div className="space-y-3 max-h-60 overflow-y-auto">
+                {queueStatus?.failed_tasks?.map((item: any) => (
+                    <div key={item.id} className="flex justify-between items-start text-sm border-l-2 border-red-500 pl-3">
+                      <div className="min-w-0">
+                         <span className="text-red-600 font-medium block truncate max-w-[150px]">{item.filename}</span>
+                         <span className="text-slate-400 text-xs">Case #{item.case_id}</span>
+                      </div>
+                      <span className="text-slate-400 text-xs whitespace-nowrap">{formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}</span>
                     </div>
-                  ))
+                ))}
+                {queueStatus?.recent_completed?.map((item: any) => (
+                    <div key={item.id} className="flex justify-between items-start text-sm border-l-2 border-emerald-500 pl-3">
+                      <div className="min-w-0">
+                         <span className="text-slate-700 font-medium block truncate max-w-[150px]">{item.filename}</span>
+                         <span className="text-slate-400 text-xs">Case #{item.case_id}</span>
+                      </div>
+                      <span className="text-slate-400 text-xs whitespace-nowrap">{formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}</span>
+                    </div>
+                ))}
+                {(!queueStatus?.recent_completed?.length && !queueStatus?.failed_tasks?.length) && (
+                   <p className="text-slate-500 text-sm">No recent activity.</p>
                 )}
               </div>
             </div>
@@ -122,7 +134,7 @@ export default function QueueMonitor() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {queueStatus?.active_tasks?.map((task) => (
+                  {queueStatus?.active_tasks?.map((task: any) => (
                     <div key={task.task_id} className="bg-slate-50 rounded-lg p-3 border border-slate-200">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-violet-600 font-medium text-sm">{task.task_name}</span>
@@ -135,6 +147,9 @@ export default function QueueMonitor() {
                         <p className="text-slate-400 text-xs mt-1">
                           Args: {JSON.stringify(task.args)}
                         </p>
+                      )}
+                      {task.started && (
+                         <p className="text-slate-400 text-xs mt-1">Started: {new Date(task.started * 1000).toLocaleTimeString()}</p>
                       )}
                     </div>
                   ))}
@@ -151,7 +166,7 @@ export default function QueueMonitor() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {queueStatus?.reserved_tasks?.map((task) => (
+                  {queueStatus?.reserved_tasks?.map((task: any) => (
                     <div key={task.task_id} className="bg-slate-50 rounded-lg p-3 border border-slate-200">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-violet-500 font-medium text-sm">{task.task_name}</span>

@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import { 
-  FolderOpen, Map, Home, Clock, StickyNote, Tag,
+  FolderOpen, Map, Home, Clock, StickyNote, Tag, Zap,
   ListTodo, Shield, Bell, Users, Activity, LogOut, LogIn, Loader2
 } from 'lucide-react'
 import { useAuth } from '../../lib/AuthContext'
@@ -18,6 +18,7 @@ const navItems = [
   { path: '/alerts', icon: Bell, label: 'Alerts' },
   { path: '/persons', icon: Users, label: 'Persons' },
   { path: '/queue', icon: Activity, label: 'Queue' },
+  { path: '/playground', icon: Zap, label: 'Playground' },
 ]
 
 export default function Sidebar() {

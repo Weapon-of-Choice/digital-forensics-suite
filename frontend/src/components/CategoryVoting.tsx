@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { api, Category, MediaCategory, CaseCategory } from '../api'
-import { ThumbsUp, ThumbsDown, Plus, Tag } from 'lucide-react'
+import { ThumbsUp, ThumbsDown, Plus, Tag, X } from 'lucide-react'
 
 interface Props {
   type: 'media' | 'case'
@@ -30,6 +30,16 @@ export default function CategoryVoting({ type, targetId, categories, allCategori
       await api.addCaseCategory(targetId, categoryId)
     }
     setShowAdd(false)
+    onRefresh()
+  }
+
+  const handleRemove = async (categoryEntryId: number) => {
+    if (!confirm('Remove this tag?')) return
+    if (type === 'media') {
+      await api.removeMediaCategory(categoryEntryId)
+    } else {
+      await api.removeCaseCategory(categoryEntryId)
+    }
     onRefresh()
   }
 
@@ -64,6 +74,13 @@ export default function CategoryVoting({ type, targetId, categories, allCategori
               >
                 <ThumbsDown size={14} />
               </button>
+              <button
+                 onClick={() => handleRemove(entry.id)}
+                 className="text-slate-300 hover:text-red-500 transition ml-1"
+                 title="Remove tag"
+               >
+                 <X size={14} />
+               </button>
             </div>
           </div>
         ))}

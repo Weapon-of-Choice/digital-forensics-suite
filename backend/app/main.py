@@ -31,6 +31,61 @@ def health_check():
     return {"status": "ok"}
 
 
+import httpx
+
+# ============ ANALYSIS PLAYGROUND ============
+
+@app.post("/analyze/faces")
+async def analyze_faces_playground(file: UploadFile = File(...)):
+    """Directly analyze an image for faces (Playground)"""
+    content = await file.read()
+    service_url = os.getenv("FACE_SERVICE_URL", "http://face-service:5000")
+    async with httpx.AsyncClient() as client:
+        # face-service expects 'file' upload
+        files = {"file": (file.filename, content, file.content_type)}
+        resp = await client.post(f"{service_url}/detect", files=files, timeout=30.0)
+        if resp.status_code != 200:
+            raise HTTPException(status_code=resp.status_code, detail=resp.text)
+        return resp.json()
+
+
+@app.post("/analyze/categories")
+async def analyze_categories_playground(file: UploadFile = File(...)):
+    """Directly classify an image (Playground)"""
+    content = await file.read()
+    service_url = os.getenv("AI_CATEGORIZER_URL", "http://ai-categorizer:5000")
+    async with httpx.AsyncClient() as client:
+        files = {"file": (file.filename, content, file.content_type)}
+        resp = await client.post(f"{service_url}/classify", files=files, timeout=30.0)
+        if resp.status_code != 200:
+            raise HTTPException(status_code=resp.status_code, detail=resp.text)
+        return resp.json()
+
+
+@app.post("/analyze/vsm")
+async def analyze_vsm_playground(file: UploadFile = File(...)):
+    """Directly analyze a video for VSM signature (Playground)"""
+    content = await file.read()
+    service_url = os.getenv("VSM_SERVICE_URL", "http://vsm-service:5000")
+    async with httpx.AsyncClient() as client:
+        files = {"file": (file.filename, content, file.content_type)}
+        resp = await client.post(f"{service_url}/extract", files=files, timeout=120.0)
+        if resp.status_code != 200:
+            raise HTTPException(status_code=resp.status_code, detail=resp.text)
+        return resp.json()
+
+
+@app.get("/analyze/geocoder")
+async def analyze_geocoder_playground(q: str):
+    """Directly geocode an address (Playground)"""
+    service_url = os.getenv("GEOCODER_URL", "http://geocoder:5000")
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(f"{service_url}/search", params={"q": q})
+        if resp.status_code != 200:
+            raise HTTPException(status_code=resp.status_code, detail=resp.text)
+        return resp.json()
+
+
 # ============ DASHBOARD STATS ============
 
 @app.get("/stats/dashboard")
@@ -322,6 +377,12 @@ def vote_media_category(mc_id: int, vote: schemas.VoteRequest, db: Session = Dep
     return crud.vote_on_media_category(db, mc_id, vote.user_id, vote.vote)
 
 
+@app.delete("/media-categories/{mc_id}")
+def remove_media_category(mc_id: int, db: Session = Depends(get_db)):
+    crud.remove_media_category(db, mc_id)
+    return {"status": "removed"}
+
+
 @app.post("/cases/{case_id}/categories", response_model=schemas.CaseCategoryResponse)
 def add_case_category(
     case_id: int,
@@ -339,6 +400,12 @@ def get_case_categories(case_id: int, db: Session = Depends(get_db)):
 @app.post("/case-categories/{cc_id}/vote")
 def vote_case_category(cc_id: int, vote: schemas.VoteRequest, db: Session = Depends(get_db)):
     return crud.vote_on_case_category(db, cc_id, vote.user_id, vote.vote)
+
+
+@app.delete("/case-categories/{cc_id}")
+def remove_case_category(cc_id: int, db: Session = Depends(get_db)):
+    crud.remove_case_category(db, cc_id)
+    return {"status": "removed"}
 
 
 @app.get("/search/signature")
@@ -702,7 +769,17 @@ def get_queue_status(db: Session = Depends(get_db)):
                 "id": m.id,
                 "filename": m.original_filename,
                 "case_id": m.case_id,
+                "created_at": m.created_at,
             }
             for m in recent_completed
         ],
+        "failed_tasks": [
+            {
+                "id": m.id,
+                "filename": m.original_filename,
+                "case_id": m.case_id,
+                "created_at": m.created_at,
+            }
+            for m in db.query(models.Media).filter(models.Media.status == "failed").order_by(models.Media.created_at.desc()).limit(10).all()
+        ]
     }
