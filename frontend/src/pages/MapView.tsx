@@ -1,37 +1,12 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
-import { api, MapMarker } from '../api'
-import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
-import { Map as MapIcon } from 'lucide-react'
-
-const defaultIcon = L.icon({
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-})
-
-L.Marker.prototype.options.icon = defaultIcon
+import { api } from '../api'
+import { Map as MapIcon, ExternalLink } from 'lucide-react'
 
 export default function MapView() {
   const [selectedCase, setSelectedCase] = useState<number | undefined>()
   
   const { data: cases } = useQuery({ queryKey: ['cases'], queryFn: api.getCases })
-  const { data: markers } = useQuery({ 
-    queryKey: ['mapMarkers', selectedCase], 
-    queryFn: () => api.getMapMarkers(selectedCase) 
-  })
-
-  const tileUrl = import.meta.env.VITE_TILE_SERVER_URL || '/osm/tiles/{z}/{x}/{y}.png'
-  const attribution = import.meta.env.VITE_MAP_ATTRIBUTION || '&copy; <a href="/osm">Local OSM</a>'
-
-  const center: [number, number] = markers?.length 
-    ? [markers[0].lat, markers[0].lon] 
-    : [51.505, -0.09]
 
   return (
     <div className="h-full flex flex-col">
@@ -46,8 +21,8 @@ export default function MapView() {
             className="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-3 py-2 rounded-md text-sm font-medium transition flex items-center gap-2 shadow-sm"
             title="Open standalone OpenStreetMap viewer"
           >
-            <MapIcon size={16} />
-            Full Map
+            <ExternalLink size={16} />
+            Open in New Tab
           </a>
           
           <select
@@ -63,36 +38,12 @@ export default function MapView() {
         </div>
       </div>
 
-      <div className="flex-1 rounded-lg overflow-hidden border border-slate-200 shadow-sm relative">
-        <MapContainer center={center} zoom={markers?.length ? 10 : 3} className="h-full w-full bg-slate-100">
-          <TileLayer
-            attribution={attribution}
-            url={tileUrl}
-          />
-          {markers?.map((marker: MapMarker) => (
-            <Marker key={marker.media_id} position={[marker.lat, marker.lon]}>
-              <Popup>
-                <div className="text-slate-900">
-                  <p className="font-semibold">{marker.original_filename}</p>
-                  <p className="text-sm">Case #{marker.case_id}</p>
-                  {marker.capture_date && (
-                    <p className="text-xs text-slate-600">
-                      {new Date(marker.capture_date).toLocaleString()}
-                    </p>
-                  )}
-                  <p className="text-xs mt-1 font-mono">
-                    {marker.lat.toFixed(6)}, {marker.lon.toFixed(6)}
-                  </p>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
-        </MapContainer>
-        {markers?.length === 0 && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-md border border-slate-200 shadow-sm">
-            <p className="text-slate-500 text-sm">No geotagged media found. Upload media with GPS data to see markers.</p>
-          </div>
-        )}
+      <div className="flex-1 rounded-lg overflow-hidden border border-slate-200 shadow-sm relative bg-slate-100">
+        <iframe 
+          src="/osm/" 
+          className="w-full h-full border-0"
+          title="Offline Map Viewer"
+        />
       </div>
     </div>
   )
