@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Filter, Calendar, FileText, Image as ImageIcon, MapPin, Search, AlertTriangle, User, Clock, Loader2 } from 'lucide-react'
 import { api, TimelineEvent, Case } from '../api'
 import { formatDistanceToNow } from 'date-fns'
+import { Skeleton } from '../components/ui/skeleton'
 
 export default function Timeline() {
   const [events, setEvents] = useState<TimelineEvent[]>([])
@@ -65,7 +66,6 @@ export default function Timeline() {
     }
   }
 
-  if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-slate-900" /></div>
   if (error) return <div className="p-8 text-red-600">{error}</div>
 
   return (
@@ -85,7 +85,31 @@ export default function Timeline() {
       </div>
 
       <div className="bg-white rounded-lg p-8 border border-slate-200 shadow-sm">
-        {events.length === 0 ? (
+        {loading ? (
+           <div className="space-y-8 pl-4">
+              <div className="flex gap-4">
+                 <Skeleton className="w-8 h-8 rounded-full" />
+                 <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-1/3" />
+                    <Skeleton className="h-4 w-full" />
+                 </div>
+              </div>
+              <div className="flex gap-4">
+                 <Skeleton className="w-8 h-8 rounded-full" />
+                 <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-1/3" />
+                    <Skeleton className="h-4 w-full" />
+                 </div>
+              </div>
+              <div className="flex gap-4">
+                 <Skeleton className="w-8 h-8 rounded-full" />
+                 <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-1/3" />
+                    <Skeleton className="h-4 w-full" />
+                 </div>
+              </div>
+           </div>
+        ) : events.length === 0 ? (
           <div className="text-center text-slate-500 py-8">No events found</div>
         ) : (
           <div className="relative border-l-2 border-slate-200 ml-4 space-y-8">

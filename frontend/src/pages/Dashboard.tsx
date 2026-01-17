@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { api } from '../api'
 import { FolderOpen, Image, MapPin, Users, Loader2, AlertTriangle, CheckCircle, ArrowRight, Zap, Server, XCircle } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { Skeleton } from '../components/ui/skeleton'
 
 function HeroBanner() {
   return (
@@ -75,7 +76,14 @@ function ServiceStatus() {
     return 'bg-red-50 border-red-200 text-red-700'
   }
 
-  if (isLoading) return <div className="flex items-center gap-2 text-slate-500"><Loader2 size={16} className="animate-spin" /> Loading services...</div>
+  if (isLoading) return (
+      <div className="flex gap-2">
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-8 w-32" />
+      </div>
+  )
+  
   if (error || !services) return <div className="text-red-500 text-sm">Failed to load service status</div>
 
   return (
@@ -92,7 +100,7 @@ function ServiceStatus() {
 
 export default function Dashboard() {
   const { data: cases } = useQuery({ queryKey: ['cases'], queryFn: api.getCases })
-  const { data: stats } = useQuery({ queryKey: ['dashboardStats'], queryFn: api.getDashboardStats })
+  const { data: stats, isLoading } = useQuery({ queryKey: ['dashboardStats'], queryFn: api.getDashboardStats })
 
   const statCards = [
     { label: 'Total Cases', value: stats?.total_cases ?? 0, icon: FolderOpen, color: 'bg-slate-900 text-white' },
@@ -111,19 +119,28 @@ export default function Dashboard() {
     <div>
       <HeroBanner />
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        {statCards.map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="bg-white rounded-lg shadow-sm p-5 flex items-center gap-4 border border-slate-200">
-            <div className={`${color} p-3 rounded-lg`}>
-              <Icon size={22} />
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <Skeleton className="h-24" />
+            <Skeleton className="h-24" />
+            <Skeleton className="h-24" />
+            <Skeleton className="h-24" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            {statCards.map(({ label, value, icon: Icon, color }) => (
+            <div key={label} className="bg-white rounded-lg shadow-sm p-5 flex items-center gap-4 border border-slate-200">
+                <div className={`${color} p-3 rounded-lg`}>
+                <Icon size={22} />
+                </div>
+                <div>
+                <p className="text-slate-500 text-sm font-medium">{label}</p>
+                <p className="text-2xl font-semibold text-slate-900">{value}</p>
+                </div>
             </div>
-            <div>
-              <p className="text-slate-500 text-sm font-medium">{label}</p>
-              <p className="text-2xl font-semibold text-slate-900">{value}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+            ))}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div className="bg-white rounded-lg shadow-sm p-5 border border-slate-200">
@@ -133,15 +150,23 @@ export default function Dashboard() {
               View Queue →
             </Link>
           </div>
-          <div className="flex gap-6">
-            {processingStats.map(({ label, value, icon: Icon, color }) => (
-              <div key={label} className="flex items-center gap-2">
-                <Icon size={18} className={color} />
-                <span className="text-slate-500 text-sm">{label}:</span>
-                <span className="text-slate-900 font-semibold">{value}</span>
-              </div>
-            ))}
-          </div>
+          {isLoading ? (
+             <div className="flex gap-6">
+                <Skeleton className="h-6 w-24" />
+                <Skeleton className="h-6 w-24" />
+                <Skeleton className="h-6 w-24" />
+             </div>
+          ) : (
+            <div className="flex gap-6">
+                {processingStats.map(({ label, value, icon: Icon, color }) => (
+                <div key={label} className="flex items-center gap-2">
+                    <Icon size={18} className={color} />
+                    <span className="text-slate-500 text-sm">{label}:</span>
+                    <span className="text-slate-900 font-semibold">{value}</span>
+                </div>
+                ))}
+            </div>
+          )}
         </div>
 
         <div className="bg-white rounded-lg shadow-sm p-5 border border-slate-200">
@@ -170,7 +195,13 @@ export default function Dashboard() {
 
       <div className="bg-white rounded-lg shadow-sm p-5 border border-slate-200">
         <h2 className="text-base font-semibold mb-4 text-slate-900">Recent Cases</h2>
-        {cases?.length === 0 ? (
+        {isLoading ? (
+             <div className="space-y-2">
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+             </div>
+        ) : cases?.length === 0 ? (
           <p className="text-slate-500 text-sm">No cases yet. Create one to get started.</p>
         ) : (
           <div className="space-y-2">

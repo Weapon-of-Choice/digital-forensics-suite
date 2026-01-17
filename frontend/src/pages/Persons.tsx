@@ -5,6 +5,7 @@ import { formatDistanceToNow, format } from 'date-fns'
 import { api, Person } from '../api'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog'
 import ConfirmDialog from '../components/ui/confirm-dialog'
+import { GridSkeleton } from '../components/ui/loading'
 
 export default function Persons() {
   const queryClient = useQueryClient()
@@ -125,6 +126,8 @@ export default function Persons() {
       return 'Unknown date'
     }
   }
+
+  if (isLoading) return <div className="mt-20"><GridSkeleton count={10} height="h-64" /></div>
 
   return (
     <div>

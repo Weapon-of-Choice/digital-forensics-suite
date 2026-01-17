@@ -4,6 +4,7 @@ import { Tag, Plus, Edit2, Trash2, Loader2, X } from 'lucide-react'
 import { api, Category } from '../api'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog'
 import ConfirmDialog from '../components/ui/confirm-dialog'
+import { GridSkeleton } from '../components/ui/loading'
 
 export default function Tags() {
   const queryClient = useQueryClient()
@@ -61,6 +62,8 @@ export default function Tags() {
   const handleDelete = () => {
     if (tagToDelete) deleteMutation.mutate(tagToDelete.id)
   }
+
+  if (isLoading) return <div className="mt-20"><GridSkeleton count={6} height="h-24" /></div>
 
   return (
     <div>
