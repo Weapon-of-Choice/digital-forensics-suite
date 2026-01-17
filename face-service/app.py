@@ -46,13 +46,23 @@ def detect_faces():
     try:
         # DeepFace.represent returns a list of dicts: 
         # [{'embedding': [...], 'facial_area': {'x': 0, 'y': 0, 'w': 0, 'h': 0}, 'face_confidence': 0.9}]
-        results = DeepFace.represent(
-            img_path=img_arr,
-            model_name=MODEL_NAME,
-            detector_backend=DETECTOR_BACKEND,
-            enforce_detection=True,
-            align=True
-        )
+        try:
+            results = DeepFace.represent(
+                img_path=img_arr,
+                model_name=MODEL_NAME,
+                detector_backend="retinaface",
+                enforce_detection=True,
+                align=True
+            )
+        except Exception as e:
+            print(f"RetinaFace failed: {e}, falling back to OpenCV")
+            results = DeepFace.represent(
+                img_path=img_arr,
+                model_name=MODEL_NAME,
+                detector_backend="opencv",
+                enforce_detection=True,
+                align=True
+            )
         
         faces = []
         for res in results:

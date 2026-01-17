@@ -26,6 +26,9 @@ export default function MapView() {
     queryFn: () => api.getMapMarkers(selectedCase) 
   })
 
+  const tileUrl = import.meta.env.VITE_TILE_SERVER_URL || 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+  const attribution = import.meta.env.VITE_MAP_ATTRIBUTION || '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+
   const center: [number, number] = markers?.length 
     ? [markers[0].lat, markers[0].lon] 
     : [51.505, -0.09]
@@ -63,8 +66,8 @@ export default function MapView() {
       <div className="flex-1 rounded-lg overflow-hidden border border-slate-200 shadow-sm relative">
         <MapContainer center={center} zoom={markers?.length ? 10 : 3} className="h-full w-full bg-slate-100">
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+            attribution={attribution}
+            url={tileUrl}
           />
           {markers?.map((marker: MapMarker) => (
             <Marker key={marker.media_id} position={[marker.lat, marker.lon]}>
