@@ -268,11 +268,19 @@ export default function CaseDetail() {
               </button>
             </div>
             <div className="p-4">
-              <img
-                src={api.getMediaFile(selectedMedia.id)}
-                alt={selectedMedia.original_filename}
-                className="max-w-full max-h-[60vh] mx-auto rounded-md border border-slate-200 shadow-sm"
-              />
+              {selectedMedia.mime_type?.startsWith('video/') ? (
+                <video
+                  src={api.getMediaFile(selectedMedia.id)}
+                  controls
+                  className="max-w-full max-h-[60vh] mx-auto rounded-md border border-slate-200 shadow-sm"
+                />
+              ) : (
+                <img
+                  src={api.getMediaFile(selectedMedia.id)}
+                  alt={selectedMedia.original_filename}
+                  className="max-w-full max-h-[60vh] mx-auto rounded-md border border-slate-200 shadow-sm"
+                />
+              )}
               
               {/* Geolocation Section */}
               <div className="mt-6 bg-slate-50 p-4 rounded-md border border-slate-200">

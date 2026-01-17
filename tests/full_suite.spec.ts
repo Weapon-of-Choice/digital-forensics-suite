@@ -41,6 +41,18 @@ test.describe('Full Stack UI Tests', () => {
     await expect(page.getByText('Upload Media')).toBeVisible();
   });
 
+  test('Video Player', async ({ page }) => {
+    await page.click('text=Cases');
+    await page.click('text=Real Data Case');
+    
+    const videoFile = page.getByText('.mp4').first();
+    if (await videoFile.isVisible()) {
+        await videoFile.click();
+        await expect(page.locator('video')).toBeVisible();
+        await page.keyboard.press('Escape');
+    }
+  });
+
   test('Map View', async ({ page }) => {
     await page.click('nav >> text=Map');
     await expect(page.getByRole('heading', { name: 'Map View' })).toBeVisible();
@@ -68,7 +80,7 @@ test.describe('Full Stack UI Tests', () => {
   });
 
   test('Search', async ({ page }) => {
-    await page.click('nav >> text=Search');
+    await page.getByText('Search...').click();
     await expect(page.getByRole('heading', { name: 'Search' })).toBeVisible();
     
     // Search for "Real Data Case" (seeded)

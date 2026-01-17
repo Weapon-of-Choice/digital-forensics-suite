@@ -25,73 +25,189 @@
           - img [ref=e25]
           - text: Map
       - listitem [ref=e27]:
-        - link "Search" [ref=e28] [cursor=pointer]:
-          - /url: /search
-          - img [ref=e29]
-          - text: Search
-      - listitem [ref=e32]:
-        - link "Timeline" [ref=e33] [cursor=pointer]:
+        - link "Timeline" [ref=e28] [cursor=pointer]:
           - /url: /timeline
-          - img [ref=e34]
+          - img [ref=e29]
           - text: Timeline
-      - listitem [ref=e37]:
-        - link "Notes" [ref=e38] [cursor=pointer]:
+      - listitem [ref=e32]:
+        - link "Notes" [ref=e33] [cursor=pointer]:
           - /url: /notes
-          - img [ref=e39]
+          - img [ref=e34]
           - text: Notes
-      - listitem [ref=e42]:
-        - link "Tasks" [ref=e43] [cursor=pointer]:
+      - listitem [ref=e37]:
+        - link "Tasks" [ref=e38] [cursor=pointer]:
           - /url: /tasks
-          - img [ref=e44]
+          - img [ref=e39]
           - text: Tasks
-      - listitem [ref=e47]:
-        - link "Watchlists" [ref=e48] [cursor=pointer]:
+      - listitem [ref=e42]:
+        - link "Watchlists" [ref=e43] [cursor=pointer]:
           - /url: /watchlists
-          - img [ref=e49]
+          - img [ref=e44]
           - text: Watchlists
-      - listitem [ref=e51]:
-        - link "Alerts" [ref=e52] [cursor=pointer]:
+      - listitem [ref=e46]:
+        - link "Alerts" [ref=e47] [cursor=pointer]:
           - /url: /alerts
-          - img [ref=e53]
+          - img [ref=e48]
           - text: Alerts
-      - listitem [ref=e56]:
-        - link "Persons" [ref=e57] [cursor=pointer]:
+      - listitem [ref=e51]:
+        - link "Persons" [ref=e52] [cursor=pointer]:
           - /url: /persons
-          - img [ref=e58]
+          - img [ref=e53]
           - text: Persons
-      - listitem [ref=e63]:
-        - link "Queue" [ref=e64] [cursor=pointer]:
+      - listitem [ref=e58]:
+        - link "Queue" [ref=e59] [cursor=pointer]:
           - /url: /queue
-          - img [ref=e65]
+          - img [ref=e60]
           - text: Queue
-    - generic [ref=e68]:
-      - generic [ref=e69]:
+    - generic [ref=e63]:
+      - generic [ref=e64]:
         - paragraph
         - paragraph
-        - generic [ref=e70]: Admin
-      - button "Sign out" [ref=e71] [cursor=pointer]:
-        - img [ref=e72]
+        - generic [ref=e65]: Admin
+      - button "Sign out" [ref=e66] [cursor=pointer]:
+        - img [ref=e67]
         - text: Sign out
-  - main [ref=e75]:
-    - generic [ref=e76]:
-      - heading "Search" [level=1] [ref=e77]
+  - generic [ref=e70]:
+    - banner [ref=e71]:
+      - button "Search..." [ref=e72] [cursor=pointer]:
+        - img [ref=e73]
+        - generic [ref=e76]: Search...
       - generic [ref=e78]:
         - generic [ref=e79]:
-          - button "Text Search" [active] [ref=e80] [cursor=pointer]:
-            - img [ref=e81]
-            - text: Text Search
-          - button "Similar Images" [ref=e83] [cursor=pointer]:
-            - img [ref=e84]
-            - text: Similar Images
-          - button "Image Signature" [ref=e88] [cursor=pointer]:
-            - img [ref=e89]
-            - text: Image Signature
-          - button "Location" [ref=e98] [cursor=pointer]:
-            - img [ref=e99]
-            - text: Location
-        - generic [ref=e102]:
-          - textbox "Search cases, persons, media..." [ref=e103]: Real Data
-          - button "Search" [ref=e104] [cursor=pointer]:
-            - img [ref=e105]
-            - text: Search
+          - paragraph
+          - paragraph [ref=e80]: Administrator
+        - img [ref=e82]
+        - button "Sign out" [ref=e85] [cursor=pointer]:
+          - img [ref=e86]
+    - main [ref=e89]:
+      - generic [ref=e90]:
+        - generic [ref=e92]:
+          - generic [ref=e93]:
+            - generic [ref=e94]:
+              - img [ref=e96]
+              - generic [ref=e98]: Forensic Platform
+            - heading "Advanced Media Analysis for Investigations" [level=2] [ref=e99]
+            - paragraph [ref=e100]: Process digital evidence with AI-powered face recognition, geolocation mapping, and intelligent categorization.
+            - generic [ref=e101]:
+              - link "Create New Case" [ref=e102] [cursor=pointer]:
+                - /url: /cases
+              - link "Search Media" [ref=e103] [cursor=pointer]:
+                - /url: /search
+                - text: Search Media
+                - img [ref=e104]
+          - generic [ref=e106]:
+            - generic [ref=e107]:
+              - generic [ref=e108]: AI
+              - generic [ref=e109]: Analysis
+            - generic [ref=e110]:
+              - generic [ref=e111]: GPS
+              - generic [ref=e112]: Mapping
+            - generic [ref=e113]:
+              - generic [ref=e114]: Face
+              - generic [ref=e115]: Recognition
+            - generic [ref=e116]:
+              - generic [ref=e117]: Hash
+              - generic [ref=e118]: Signatures
+        - generic [ref=e119]:
+          - generic [ref=e120]:
+            - img [ref=e122]
+            - generic [ref=e124]:
+              - paragraph [ref=e125]: Total Cases
+              - paragraph [ref=e126]: "9"
+          - generic [ref=e127]:
+            - img [ref=e129]
+            - generic [ref=e133]:
+              - paragraph [ref=e134]: Total Media
+              - paragraph [ref=e135]: "5"
+          - generic [ref=e136]:
+            - img [ref=e138]
+            - generic [ref=e141]:
+              - paragraph [ref=e142]: GPS Locations
+              - paragraph [ref=e143]: "3"
+          - generic [ref=e144]:
+            - img [ref=e146]
+            - generic [ref=e151]:
+              - paragraph [ref=e152]: Faces Detected
+              - paragraph [ref=e153]: "0"
+        - generic [ref=e154]:
+          - generic [ref=e155]:
+            - generic [ref=e156]:
+              - heading "Processing Status" [level=2] [ref=e157]
+              - link "View Queue →" [ref=e158] [cursor=pointer]:
+                - /url: /queue
+            - generic [ref=e159]:
+              - generic [ref=e160]:
+                - img [ref=e161]
+                - generic [ref=e163]: "Processing:"
+                - generic [ref=e164]: "0"
+              - generic [ref=e165]:
+                - img [ref=e166]
+                - generic [ref=e169]: "Completed:"
+                - generic [ref=e170]: "5"
+              - generic [ref=e171]:
+                - img [ref=e172]
+                - generic [ref=e174]: "Failed:"
+                - generic [ref=e175]: "0"
+          - generic [ref=e176]:
+            - heading "Quick Actions" [level=2] [ref=e177]
+            - generic [ref=e178]:
+              - link "New Case" [ref=e179] [cursor=pointer]:
+                - /url: /cases
+              - link "View Map" [ref=e180] [cursor=pointer]:
+                - /url: /map
+              - link "Search Media" [ref=e181] [cursor=pointer]:
+                - /url: /search
+        - generic [ref=e182]:
+          - generic [ref=e183]:
+            - img [ref=e184]
+            - heading "Service Health" [level=2] [ref=e187]
+          - generic [ref=e188]:
+            - generic [ref=e189]:
+              - img [ref=e190]
+              - generic [ref=e193]: face-service
+            - generic [ref=e194]:
+              - img [ref=e195]
+              - generic [ref=e198]: hash-service
+            - generic [ref=e199]:
+              - img [ref=e200]
+              - generic [ref=e203]: ai-categorizer
+            - generic [ref=e204]:
+              - img [ref=e205]
+              - generic [ref=e208]: geocoder
+            - generic [ref=e209]:
+              - img [ref=e210]
+              - generic [ref=e213]: vsm-service
+        - generic [ref=e214]:
+          - heading "Recent Cases" [level=2] [ref=e215]
+          - generic [ref=e216]:
+            - link "Real Data Case Real images from Unsplash 1/17/2026" [ref=e217] [cursor=pointer]:
+              - /url: /cases/8
+              - generic [ref=e218]:
+                - paragraph [ref=e219]: Real Data Case
+                - paragraph [ref=e220]: Real images from Unsplash
+              - generic [ref=e221]: 1/17/2026
+            - link "Auto Case 1768633716779 No description 1/17/2026" [ref=e222] [cursor=pointer]:
+              - /url: /cases/9
+              - generic [ref=e223]:
+                - paragraph [ref=e224]: Auto Case 1768633716779
+                - paragraph [ref=e225]: No description
+              - generic [ref=e226]: 1/17/2026
+            - link "Auto Case 1768633889513 No description 1/17/2026" [ref=e227] [cursor=pointer]:
+              - /url: /cases/10
+              - generic [ref=e228]:
+                - paragraph [ref=e229]: Auto Case 1768633889513
+                - paragraph [ref=e230]: No description
+              - generic [ref=e231]: 1/17/2026
+            - link "Auto Case 1768634353943 No description 1/17/2026" [ref=e232] [cursor=pointer]:
+              - /url: /cases/11
+              - generic [ref=e233]:
+                - paragraph [ref=e234]: Auto Case 1768634353943
+                - paragraph [ref=e235]: No description
+              - generic [ref=e236]: 1/17/2026
+            - link "Auto Case 1768634715608 No description 1/17/2026" [ref=e237] [cursor=pointer]:
+              - /url: /cases/12
+              - generic [ref=e238]:
+                - paragraph [ref=e239]: Auto Case 1768634715608
+                - paragraph [ref=e240]: No description
+              - generic [ref=e241]: 1/17/2026
 ```
